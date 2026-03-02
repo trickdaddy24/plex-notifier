@@ -9,7 +9,10 @@ from datetime import datetime, timedelta
 from colorama import init, Fore, Style
 import schedule
 import requests
-from dotenv import load_dotenv
+from dotenv import load_dotenv, set_key
+from pathlib import Path
+
+ENV_PATH = Path(__file__).parent / '.env'
 
 # Load environment variables from .env file
 load_dotenv()
@@ -246,9 +249,10 @@ def telegram_menu():
         print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
 
         print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. ℹ️  Setup Instructions{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
         print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
 
         choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
@@ -256,12 +260,14 @@ def telegram_menu():
         if choice == "1":
             verify_telegram_config()
         elif choice == "2":
+            set_telegram_credentials()
+        elif choice == "3":
             msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
             send_telegram_message(msg)
-        elif choice == "3":
+        elif choice == "4":
             print(f"\n{Fore.GREEN}TELEGRAM_BOT_TOKEN=your_bot_token_here{Style.RESET_ALL}")
             print(f"{Fore.GREEN}TELEGRAM_CHAT_ID=your_chat_id_here{Style.RESET_ALL}")
-        elif choice == "4":
+        elif choice == "5":
             print(f"\n{Fore.CYAN}📚 Telegram Setup:{Style.RESET_ALL}")
             print(f"1. Message @BotFather on Telegram")
             print(f"2. Send /newbot and follow instructions")
@@ -284,9 +290,10 @@ def discord_menu():
         print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
 
         print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. ℹ️  Setup Instructions{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
         print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
 
         choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
@@ -294,11 +301,13 @@ def discord_menu():
         if choice == "1":
             verify_discord_config()
         elif choice == "2":
+            set_discord_credentials()
+        elif choice == "3":
             msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
             send_discord_message(msg)
-        elif choice == "3":
-            print(f"\n{Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...{Style.RESET_ALL}")
         elif choice == "4":
+            print(f"\n{Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...{Style.RESET_ALL}")
+        elif choice == "5":
             print(f"\n{Fore.CYAN}📚 Discord Setup:{Style.RESET_ALL}")
             print(f"1. Go to your Discord server")
             print(f"2. Edit Channel → Integrations → Webhooks")
@@ -321,9 +330,10 @@ def pushover_menu():
         print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
 
         print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. ℹ️  Setup Instructions{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
         print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
 
         choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
@@ -331,12 +341,14 @@ def pushover_menu():
         if choice == "1":
             verify_pushover_config()
         elif choice == "2":
+            set_pushover_credentials()
+        elif choice == "3":
             msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
             send_pushover_message(msg)
-        elif choice == "3":
+        elif choice == "4":
             print(f"\n{Fore.GREEN}PUSHOVER_USER_KEY=your_user_key_here{Style.RESET_ALL}")
             print(f"{Fore.GREEN}PUSHOVER_API_TOKEN=your_api_token_here{Style.RESET_ALL}")
-        elif choice == "4":
+        elif choice == "5":
             print(f"\n{Fore.CYAN}📚 Pushover Setup:{Style.RESET_ALL}")
             print(f"1. Go to https://pushover.net")
             print(f"2. Create an account")
@@ -359,9 +371,10 @@ def email_menu():
         print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
 
         print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. 📤 Send Test Email{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. ℹ️  Setup Instructions{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}3. 📤 Send Test Email{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
+        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
         print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
 
         choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
@@ -369,15 +382,17 @@ def email_menu():
         if choice == "1":
             verify_email_config()
         elif choice == "2":
+            set_email_credentials()
+        elif choice == "3":
             msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
             send_email_message(msg)
-        elif choice == "3":
+        elif choice == "4":
             print(f"\n{Fore.GREEN}EMAIL_SMTP_SERVER=smtp.gmail.com{Style.RESET_ALL}")
             print(f"{Fore.GREEN}EMAIL_SMTP_PORT=587{Style.RESET_ALL}")
             print(f"{Fore.GREEN}EMAIL_SENDER=your_email@gmail.com{Style.RESET_ALL}")
             print(f"{Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
             print(f"{Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}")
-        elif choice == "4":
+        elif choice == "5":
             print(f"\n{Fore.CYAN}📚 Gmail Setup:{Style.RESET_ALL}")
             print(f"1. Go to Google Account → Security")
             print(f"2. Enable 2-Step Verification")
@@ -450,6 +465,56 @@ def show_complete_env_example():
 
     print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
     input(f"{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+
+# ==================== CREDENTIAL SETUP ====================
+def _set_credential(key, prompt_text, secret=False):
+    """Prompt for a value, write it to .env, and update the current session."""
+    display = "(input hidden)" if secret else ""
+    print(f"{Fore.YELLOW}{prompt_text} {display}: {Style.RESET_ALL}", end="" if not secret else "\n")
+    if secret:
+        import getpass
+        value = getpass.getpass(f"{Fore.YELLOW}{prompt_text}: {Style.RESET_ALL}").strip()
+    else:
+        value = input().strip()
+    if not value:
+        print(f"{Fore.YELLOW}⚠️  Skipped — value unchanged.{Style.RESET_ALL}")
+        return False
+    set_key(str(ENV_PATH), key, value)
+    os.environ[key] = value
+    print(f"{Fore.GREEN}✅ {key} saved.{Style.RESET_ALL}")
+    return True
+
+def set_telegram_credentials():
+    print(f"\n{Fore.CYAN}📱 Enter Telegram Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    _set_credential('TELEGRAM_BOT_TOKEN', 'Bot Token')
+    _set_credential('TELEGRAM_CHAT_ID', 'Chat ID')
+    load_dotenv(str(ENV_PATH), override=True)
+    print(f"{Fore.GREEN}✅ Telegram credentials updated.{Style.RESET_ALL}")
+
+def set_discord_credentials():
+    print(f"\n{Fore.CYAN}💬 Enter Discord Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}Press Enter to skip and keep current value.{Style.RESET_ALL}\n")
+    _set_credential('DISCORD_WEBHOOK_URL', 'Webhook URL')
+    load_dotenv(str(ENV_PATH), override=True)
+    print(f"{Fore.GREEN}✅ Discord credentials updated.{Style.RESET_ALL}")
+
+def set_pushover_credentials():
+    print(f"\n{Fore.CYAN}📲 Enter Pushover Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    _set_credential('PUSHOVER_USER_KEY', 'User Key')
+    _set_credential('PUSHOVER_API_TOKEN', 'API Token')
+    load_dotenv(str(ENV_PATH), override=True)
+    print(f"{Fore.GREEN}✅ Pushover credentials updated.{Style.RESET_ALL}")
+
+def set_email_credentials():
+    print(f"\n{Fore.CYAN}📧 Enter Gmail Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    _set_credential('EMAIL_SENDER', 'Sender Email')
+    _set_credential('EMAIL_PASSWORD', 'App Password', secret=True)
+    _set_credential('EMAIL_RECIPIENT', 'Recipient Email')
+    load_dotenv(str(ENV_PATH), override=True)
+    print(f"{Fore.GREEN}✅ Gmail credentials updated.{Style.RESET_ALL}")
 
 # ==================== NOTIFICATION CRUD ====================
 def add_notification():
