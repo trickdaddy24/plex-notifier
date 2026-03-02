@@ -5,31 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.32] - 2026-03-01  *(Latest)*
+## [v1.0.32] - 2026-03-01  *(Latest)*
 
 ### Added
 
 - Added version_manager.py integration, System menu (option 7) with version history; renamed entry point to notifier.py; added README, requirements.txt, .gitignore, CHANGELOG.md
 
-## [1.0.31] - 2025-12-14
+## [v1.0.31] - 2025-12-14
 
 ### Fixed
 
 - Fixed desktop notification crash when plyer notify is not callable; changed scheduler failure to warning instead of crash
 
-## [1.0.20] - 2025-10-09
+## [v1.0.20] - 2025-10-09
 
 ### Added
 
 - Added Pushover integration, unified notification services menu, show_complete_env_example helper, per-service status indicators
 
-## [1.0.10] - 2025-08-22
+## [v1.0.10] - 2025-08-22
 
 ### Added
 
 - Added Discord webhook integration and Gmail SMTP support with app-password instructions
 
-## [1.0.0] - 2025-06-01
+## [v1.0.0] - 2025-06-01
 
 ### Other
 

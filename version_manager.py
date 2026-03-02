@@ -221,7 +221,7 @@ def update_changelog():
             for i, (rel_id, version, notes, ts) in enumerate(releases):
                 date_str = ts[:10] if ts else 'unknown'
                 latest_tag = "  *(Latest)*" if i == 0 else ""
-                f.write(f"## [{version}] - {date_str}{latest_tag}\n\n")
+                f.write(f"## [v{version}] - {date_str}{latest_tag}\n\n")
 
                 if not notes or not notes.strip():
                     f.write("No release notes provided.\n\n")
