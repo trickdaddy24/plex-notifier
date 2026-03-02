@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.39] - 2026-03-02  *(Latest)*
+## [v1.0.40] - 2026-03-02  *(Latest)*
+
+### Added
+
+- Full colorama redesign — added _box/_div/_opt/_prompt UI helpers, distinct colors per action type (green=add, cyan=view, blue=edit, red=delete, magenta=services), Style.BRIGHT accents, service-specific box border colors (Telegram=blue, Discord=magenta, Pushover=yellow, Gmail=red), triangle prompt arrow, improved startup banner
+
+## [v1.0.39] - 2026-03-02
 
 ### Added
 

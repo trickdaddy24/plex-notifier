@@ -102,6 +102,9 @@ SEED_VERSIONS = [
     ("012", "1.0.39",
      "Fixed version showing v1.0.32 — seed_initial_versions now always INSERT OR IGNORE so new versions are picked up on update. Added Check for Updates option to System menu with auto-update via git",
      "2026-03-02 00:30:00"),
+    ("013", "1.0.40",
+     "Full colorama redesign — added _box/_div/_opt/_prompt UI helpers, distinct colors per action type (green=add, cyan=view, blue=edit, red=delete, magenta=services), Style.BRIGHT accents, service-specific box border colors (Telegram=blue, Discord=magenta, Pushover=yellow, Gmail=red), triangle prompt arrow, improved startup banner",
+     "2026-03-02 01:00:00"),
 ]
 
 
@@ -128,7 +131,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "1.0.39"
+    return latest[1] if latest else "1.0.40"
 
 
 def get_latest_version_data():

@@ -6,7 +6,7 @@ import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
-from colorama import init, Fore, Style
+from colorama import init, Fore, Back, Style
 import schedule
 import requests
 from dotenv import load_dotenv, set_key
@@ -26,10 +26,32 @@ except ImportError:
     print(f"{Fore.YELLOW}⚠️  Warning: plyer not installed. Desktop notifications disabled.{Style.RESET_ALL}")
     print(f"{Fore.YELLOW}Install with: pip install plyer{Style.RESET_ALL}\n")
 
-init()  # Colorama setup
+init(autoreset=False)  # Colorama setup
 
 # Database setup
 DB_NAME = "notifications.db"
+
+# ── Shared UI helpers ──────────────────────────────────────────────────────────
+
+def _box(color, title, ver_str=None):
+    """Print a colored box header. Optionally show a version on the second line."""
+    c = color + Style.BRIGHT
+    print(f"\n{c}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
+    print(f"{c}║  {title:<37}║{Style.RESET_ALL}")
+    if ver_str:
+        lpad = (39 - len(ver_str)) // 2
+        rpad = 39 - len(ver_str) - lpad
+        print(f"{c}║{' ' * lpad}{Fore.WHITE}{Style.BRIGHT}{ver_str}{Style.RESET_ALL}{c}{' ' * rpad}║{Style.RESET_ALL}")
+    print(f"{c}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
+
+def _div():
+    print(f"  {Fore.WHITE}{Style.DIM}{'─' * 39}{Style.RESET_ALL}")
+
+def _prompt(text="Choose: "):
+    return input(f"\n  {Fore.GREEN}{Style.BRIGHT}▶  {text}{Style.RESET_ALL}").strip()
+
+def _opt(num, color, emoji, label):
+    print(f"  {Fore.YELLOW}{Style.BRIGHT}{num}{Style.RESET_ALL}  {color}{emoji}  {label}{Style.RESET_ALL}")
 
 def init_db():
     """Initialize notifications database"""
@@ -237,194 +259,169 @@ def verify_email_config():
     return send_email_message("✅ Gmail verification successful!")
 
 # ==================== NOTIFICATION MENUS ====================
+
+def _service_menu_options(prompt_color):
+    """Print standard service sub-menu options and return choice."""
+    _opt("1", Fore.GREEN + Style.BRIGHT,        "✅", "Verify Configuration")
+    _opt("2", Fore.BLUE  + Style.BRIGHT,        "✏️ ", "Set Credentials")
+    _opt("3", Fore.CYAN,                         "📤", "Send Test Message")
+    _opt("4", Fore.WHITE + Style.DIM,            "📋", "Show .env Variables")
+    _opt("5", Fore.WHITE + Style.DIM,            "ℹ️ ", "Setup Instructions")
+    _div()
+    _opt("0", Fore.RED   + Style.DIM,            "⬅️ ", "Back")
+    return _prompt("Choose: ")
+
 def telegram_menu():
     """Telegram configuration and testing menu"""
     while True:
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║       📱 TELEGRAM SETTINGS            ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-
+        _box(Fore.BLUE, "📱 TELEGRAM SETTINGS")
         bot_token, chat_id = get_telegram_config()
-        status = f"{Fore.GREEN}✅ CONFIGURED{Style.RESET_ALL}" if bot_token and chat_id else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
-        print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
+        status = f"{Fore.GREEN}{Style.BRIGHT}✅ CONFIGURED{Style.RESET_ALL}" if bot_token and chat_id else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
+        print(f"  Status: {status}\n")
 
-        print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
-
-        choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        choice = _service_menu_options(Fore.BLUE)
 
         if choice == "1":
             verify_telegram_config()
         elif choice == "2":
             set_telegram_credentials()
         elif choice == "3":
-            msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
+            msg = _prompt("Test message (Enter for default): ") or "🧪 Test from Notification App!"
             send_telegram_message(msg)
         elif choice == "4":
-            print(f"\n{Fore.GREEN}TELEGRAM_BOT_TOKEN=your_bot_token_here{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}TELEGRAM_CHAT_ID=your_chat_id_here{Style.RESET_ALL}")
+            print(f"\n  {Fore.GREEN}TELEGRAM_BOT_TOKEN=your_bot_token_here{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}TELEGRAM_CHAT_ID=your_chat_id_here{Style.RESET_ALL}")
         elif choice == "5":
-            print(f"\n{Fore.CYAN}📚 Telegram Setup:{Style.RESET_ALL}")
-            print(f"1. Message @BotFather on Telegram")
-            print(f"2. Send /newbot and follow instructions")
-            print(f"3. Get your bot token")
-            print(f"4. Message @userinfobot to get your chat ID")
-            print(f"5. Add both to .env file")
-            input(f"\n{Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
+            print(f"\n  {Fore.CYAN}{Style.BRIGHT}📚 Telegram Setup:{Style.RESET_ALL}")
+            print(f"  1. Message @BotFather on Telegram")
+            print(f"  2. Send /newbot and follow instructions")
+            print(f"  3. Get your bot token")
+            print(f"  4. Message @userinfobot to get your chat ID")
+            print(f"  5. Add both to .env file")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
 
 def discord_menu():
     """Discord configuration and testing menu"""
     while True:
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║       💬 DISCORD SETTINGS             ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-
+        _box(Fore.MAGENTA, "💬 DISCORD SETTINGS")
         webhook_url = get_discord_config()
-        status = f"{Fore.GREEN}✅ CONFIGURED{Style.RESET_ALL}" if webhook_url else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
-        print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
+        status = f"{Fore.GREEN}{Style.BRIGHT}✅ CONFIGURED{Style.RESET_ALL}" if webhook_url else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
+        print(f"  Status: {status}\n")
 
-        print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
-
-        choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        choice = _service_menu_options(Fore.MAGENTA)
 
         if choice == "1":
             verify_discord_config()
         elif choice == "2":
             set_discord_credentials()
         elif choice == "3":
-            msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
+            msg = _prompt("Test message (Enter for default): ") or "🧪 Test from Notification App!"
             send_discord_message(msg)
         elif choice == "4":
-            print(f"\n{Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...{Style.RESET_ALL}")
+            print(f"\n  {Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/...{Style.RESET_ALL}")
         elif choice == "5":
-            print(f"\n{Fore.CYAN}📚 Discord Setup:{Style.RESET_ALL}")
-            print(f"1. Go to your Discord server")
-            print(f"2. Edit Channel → Integrations → Webhooks")
-            print(f"3. Create New Webhook")
-            print(f"4. Copy Webhook URL")
-            print(f"5. Add DISCORD_WEBHOOK_URL to .env file")
-            input(f"\n{Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
+            print(f"\n  {Fore.CYAN}{Style.BRIGHT}📚 Discord Setup:{Style.RESET_ALL}")
+            print(f"  1. Go to your Discord server")
+            print(f"  2. Edit Channel → Integrations → Webhooks")
+            print(f"  3. Create New Webhook")
+            print(f"  4. Copy Webhook URL")
+            print(f"  5. Add DISCORD_WEBHOOK_URL to .env file")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
 
 def pushover_menu():
     """Pushover configuration and testing menu"""
     while True:
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║       📲 PUSHOVER SETTINGS            ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-
+        _box(Fore.YELLOW, "📲 PUSHOVER SETTINGS")
         user_key, api_token = get_pushover_config()
-        status = f"{Fore.GREEN}✅ CONFIGURED{Style.RESET_ALL}" if user_key and api_token else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
-        print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
+        status = f"{Fore.GREEN}{Style.BRIGHT}✅ CONFIGURED{Style.RESET_ALL}" if user_key and api_token else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
+        print(f"  Status: {status}\n")
 
-        print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📤 Send Test Message{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
-
-        choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        choice = _service_menu_options(Fore.YELLOW)
 
         if choice == "1":
             verify_pushover_config()
         elif choice == "2":
             set_pushover_credentials()
         elif choice == "3":
-            msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
+            msg = _prompt("Test message (Enter for default): ") or "🧪 Test from Notification App!"
             send_pushover_message(msg)
         elif choice == "4":
-            print(f"\n{Fore.GREEN}PUSHOVER_USER_KEY=your_user_key_here{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}PUSHOVER_API_TOKEN=your_api_token_here{Style.RESET_ALL}")
+            print(f"\n  {Fore.GREEN}PUSHOVER_USER_KEY=your_user_key_here{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}PUSHOVER_API_TOKEN=your_api_token_here{Style.RESET_ALL}")
         elif choice == "5":
-            print(f"\n{Fore.CYAN}📚 Pushover Setup:{Style.RESET_ALL}")
-            print(f"1. Go to https://pushover.net")
-            print(f"2. Create an account")
-            print(f"3. Get your User Key from dashboard")
-            print(f"4. Create an Application/API Token")
-            print(f"5. Add both to .env file")
-            input(f"\n{Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
+            print(f"\n  {Fore.CYAN}{Style.BRIGHT}📚 Pushover Setup:{Style.RESET_ALL}")
+            print(f"  1. Go to https://pushover.net")
+            print(f"  2. Create an account")
+            print(f"  3. Get your User Key from dashboard")
+            print(f"  4. Create an Application/API Token")
+            print(f"  5. Add both to .env file")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
 
 def email_menu():
     """Gmail configuration and testing menu"""
     while True:
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║       📧 GMAIL SETTINGS               ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-
+        _box(Fore.RED, "📧 GMAIL SETTINGS")
         _, _, sender, _, recipient = get_email_config()
-        status = f"{Fore.GREEN}✅ CONFIGURED{Style.RESET_ALL}" if sender and recipient else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
-        print(f"{Fore.WHITE}Status: {status}{Style.RESET_ALL}\n")
+        status = f"{Fore.GREEN}{Style.BRIGHT}✅ CONFIGURED{Style.RESET_ALL}" if sender and recipient else f"{Fore.RED}❌ NOT CONFIGURED{Style.RESET_ALL}"
+        print(f"  Status: {status}\n")
 
-        print(f"{Fore.WHITE}1. ✅ Verify Configuration{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. ✏️  Set Credentials{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📤 Send Test Email{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. 📋 Show .env Variables{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. ℹ️  Setup Instructions{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back{Style.RESET_ALL}")
-
-        choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        choice = _service_menu_options(Fore.RED)
 
         if choice == "1":
             verify_email_config()
         elif choice == "2":
             set_email_credentials()
         elif choice == "3":
-            msg = input(f"{Fore.YELLOW}Test message: {Style.RESET_ALL}").strip() or "🧪 Test from Notification App!"
+            msg = _prompt("Test message (Enter for default): ") or "🧪 Test from Notification App!"
             send_email_message(msg)
         elif choice == "4":
-            print(f"\n{Fore.GREEN}EMAIL_SMTP_SERVER=smtp.gmail.com{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}EMAIL_SMTP_PORT=587{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}EMAIL_SENDER=your_email@gmail.com{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
-            print(f"{Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}")
+            print(f"\n  {Fore.GREEN}EMAIL_SMTP_SERVER=smtp.gmail.com{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}EMAIL_SMTP_PORT=587{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}EMAIL_SENDER=your_email@gmail.com{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
+            print(f"  {Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}")
         elif choice == "5":
-            print(f"\n{Fore.CYAN}📚 Gmail Setup:{Style.RESET_ALL}")
-            print(f"1. Go to Google Account → Security")
-            print(f"2. Enable 2-Step Verification")
-            print(f"3. Go to App Passwords")
-            print(f"4. Generate an app password for 'Mail'")
-            print(f"5. Use that password (not your regular password!)")
-            print(f"6. Add all EMAIL_* variables to .env file")
-            input(f"\n{Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
+            print(f"\n  {Fore.CYAN}{Style.BRIGHT}📚 Gmail Setup:{Style.RESET_ALL}")
+            print(f"  1. Go to Google Account → Security")
+            print(f"  2. Enable 2-Step Verification")
+            print(f"  3. Go to App Passwords")
+            print(f"  4. Generate an app password for 'Mail'")
+            print(f"  5. Use that password (not your regular password!)")
+            print(f"  6. Add all EMAIL_* variables to .env file")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
 
 def notification_services_menu():
     """Main notification services menu"""
     while True:
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║    📬 NOTIFICATION SERVICES           ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
+        _box(Fore.MAGENTA, "📬 NOTIFICATION SERVICES")
 
-        # Check status of each service
-        tg_status = "✅" if all(get_telegram_config()) else "❌"
-        dc_status = "✅" if get_discord_config() else "❌"
-        po_status = "✅" if all(get_pushover_config()) else "❌"
-        em_status = "✅" if all([get_email_config()[2], get_email_config()[4]]) else "❌"
+        tg_ok = all(get_telegram_config())
+        dc_ok = bool(get_discord_config())
+        po_ok = all(get_pushover_config())
+        em_ok = all([get_email_config()[2], get_email_config()[4]])
 
-        print(f"{Fore.WHITE}1. {tg_status} 📱 Telegram{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. {dc_status} 💬 Discord{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. {po_status} 📲 Pushover{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. {em_status} 📧 Gmail{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. 📋 Show Complete .env Example{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back to Main Menu{Style.RESET_ALL}")
+        def _svc_line(num, ok, emoji, label):
+            tick = f"{Fore.GREEN}✅{Style.RESET_ALL}" if ok else f"{Fore.RED}❌{Style.RESET_ALL}"
+            clr = Fore.WHITE if ok else Fore.WHITE + Style.DIM
+            print(f"  {Fore.YELLOW}{Style.BRIGHT}{num}{Style.RESET_ALL}  {tick} {clr}{emoji}  {label}{Style.RESET_ALL}")
 
-        choice = input(f"\n{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        _svc_line("1", tg_ok, "📱", "Telegram")
+        _svc_line("2", dc_ok, "💬", "Discord")
+        _svc_line("3", po_ok, "📲", "Pushover")
+        _svc_line("4", em_ok, "📧", "Gmail")
+        _div()
+        _opt("5", Fore.WHITE + Style.DIM, "📋", "Show Complete .env Example")
+        _opt("0", Fore.RED  + Style.DIM, "⬅️ ", "Back to Main Menu")
+
+        choice = _prompt("Choose: ")
 
         if choice == "1":
             telegram_menu()
@@ -441,41 +438,39 @@ def notification_services_menu():
 
 def show_complete_env_example():
     """Show complete .env file example"""
-    print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}📄 COMPLETE .env FILE EXAMPLE{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
+    print(f"\n  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}📄  COMPLETE .env FILE EXAMPLE{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}\n")
 
-    print(f"{Fore.YELLOW}# Telegram Configuration{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}TELEGRAM_CHAT_ID=987654321{Style.RESET_ALL}\n")
+    print(f"  {Fore.YELLOW}# Telegram{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}TELEGRAM_BOT_TOKEN=123456789:ABCdefGHIjklMNOpqrsTUVwxyz{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}TELEGRAM_CHAT_ID=987654321{Style.RESET_ALL}\n")
 
-    print(f"{Fore.YELLOW}# Discord Configuration{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789/abcdef{Style.RESET_ALL}\n")
+    print(f"  {Fore.YELLOW}# Discord{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}DISCORD_WEBHOOK_URL=https://discord.com/api/webhooks/123456789/abcdef{Style.RESET_ALL}\n")
 
-    print(f"{Fore.YELLOW}# Pushover Configuration{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}PUSHOVER_USER_KEY=your_user_key_here{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}PUSHOVER_API_TOKEN=your_api_token_here{Style.RESET_ALL}\n")
+    print(f"  {Fore.YELLOW}# Pushover{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}PUSHOVER_USER_KEY=your_user_key_here{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}PUSHOVER_API_TOKEN=your_api_token_here{Style.RESET_ALL}\n")
 
-    print(f"{Fore.YELLOW}# Gmail Configuration{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}EMAIL_SMTP_SERVER=smtp.gmail.com{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}EMAIL_SMTP_PORT=587{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}EMAIL_SENDER=your_email@gmail.com{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
-    print(f"{Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}\n")
+    print(f"  {Fore.YELLOW}# Gmail{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}EMAIL_SMTP_SERVER=smtp.gmail.com{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}EMAIL_SMTP_PORT=587{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}EMAIL_SENDER=your_email@gmail.com{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}\n")
 
-    print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-    input(f"{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
+    input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
 
 # ==================== CREDENTIAL SETUP ====================
 def _set_credential(key, prompt_text, secret=False):
     """Prompt for a value, write it to .env, and update the current session."""
-    display = "(input hidden)" if secret else ""
-    print(f"{Fore.YELLOW}{prompt_text} {display}: {Style.RESET_ALL}", end="" if not secret else "\n")
     if secret:
         import getpass
-        value = getpass.getpass(f"{Fore.YELLOW}{prompt_text}: {Style.RESET_ALL}").strip()
+        value = getpass.getpass(f"  {Fore.YELLOW}▶  {prompt_text} (hidden): {Style.RESET_ALL}").strip()
     else:
-        value = input().strip()
+        value = input(f"  {Fore.YELLOW}▶  {prompt_text}: {Style.RESET_ALL}").strip()
     if not value:
         print(f"{Fore.YELLOW}⚠️  Skipped — value unchanged.{Style.RESET_ALL}")
         return False
@@ -485,31 +480,31 @@ def _set_credential(key, prompt_text, secret=False):
     return True
 
 def set_telegram_credentials():
-    print(f"\n{Fore.CYAN}📱 Enter Telegram Credentials{Style.RESET_ALL}")
-    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    print(f"\n{Fore.BLUE}{Style.BRIGHT}📱 Enter Telegram Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}{Style.DIM}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
     _set_credential('TELEGRAM_BOT_TOKEN', 'Bot Token')
     _set_credential('TELEGRAM_CHAT_ID', 'Chat ID')
     load_dotenv(str(ENV_PATH), override=True)
     print(f"{Fore.GREEN}✅ Telegram credentials updated.{Style.RESET_ALL}")
 
 def set_discord_credentials():
-    print(f"\n{Fore.CYAN}💬 Enter Discord Credentials{Style.RESET_ALL}")
-    print(f"{Fore.WHITE}Press Enter to skip and keep current value.{Style.RESET_ALL}\n")
+    print(f"\n{Fore.MAGENTA}{Style.BRIGHT}💬 Enter Discord Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}{Style.DIM}Press Enter to skip and keep current value.{Style.RESET_ALL}\n")
     _set_credential('DISCORD_WEBHOOK_URL', 'Webhook URL')
     load_dotenv(str(ENV_PATH), override=True)
     print(f"{Fore.GREEN}✅ Discord credentials updated.{Style.RESET_ALL}")
 
 def set_pushover_credentials():
-    print(f"\n{Fore.CYAN}📲 Enter Pushover Credentials{Style.RESET_ALL}")
-    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    print(f"\n{Fore.YELLOW}{Style.BRIGHT}📲 Enter Pushover Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}{Style.DIM}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
     _set_credential('PUSHOVER_USER_KEY', 'User Key')
     _set_credential('PUSHOVER_API_TOKEN', 'API Token')
     load_dotenv(str(ENV_PATH), override=True)
     print(f"{Fore.GREEN}✅ Pushover credentials updated.{Style.RESET_ALL}")
 
 def set_email_credentials():
-    print(f"\n{Fore.CYAN}📧 Enter Gmail Credentials{Style.RESET_ALL}")
-    print(f"{Fore.WHITE}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
+    print(f"\n{Fore.RED}{Style.BRIGHT}📧 Enter Gmail Credentials{Style.RESET_ALL}")
+    print(f"{Fore.WHITE}{Style.DIM}Press Enter to skip a field and keep its current value.{Style.RESET_ALL}\n")
     _set_credential('EMAIL_SENDER', 'Sender Email')
     _set_credential('EMAIL_PASSWORD', 'App Password', secret=True)
     _set_credential('EMAIL_RECIPIENT', 'Recipient Email')
@@ -527,13 +522,13 @@ def _parse_due_time(due_str):
     return None
 
 def add_notification():
-    print(f"{Fore.YELLOW}Enter message: {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  Enter message: {Style.RESET_ALL}", end="")
     msg = input().strip()
     if not msg:
         print(f"{Fore.RED}❌ Message cannot be empty!{Style.RESET_ALL}")
         return
 
-    print(f"{Fore.YELLOW}Enter due time (e.g., '{datetime.now().strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  Due time (e.g., '{datetime.now().strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
     due_raw = input().strip()
 
     due_dt = _parse_due_time(due_raw)
@@ -566,18 +561,19 @@ def view_notifications():
     conn.close()
 
     if not rows:
-        print(f"{Fore.YELLOW}⚠️  No notifications.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}⚠️  No notifications scheduled.{Style.RESET_ALL}")
         return
 
-    print(f"\n{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
+    print(f"\n  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     for row in rows:
-        status = f"{Fore.GREEN}✅ SENT{Style.RESET_ALL}" if row[3] else f"{Fore.YELLOW}⏳ PENDING{Style.RESET_ALL}"
-        print(f"{Fore.WHITE}ID: {row[0]} | Msg: {row[1]}{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}Due: {row[2]} | Status: {status}{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}{'-'*70}{Style.RESET_ALL}")
+        status = f"{Fore.GREEN}{Style.BRIGHT}✅ SENT{Style.RESET_ALL}" if row[3] else f"{Fore.YELLOW}⏳ PENDING{Style.RESET_ALL}"
+        id_clr = Fore.YELLOW + Style.BRIGHT
+        print(f"  {id_clr}#{row[0]}{Style.RESET_ALL}  {Fore.WHITE}{Style.BRIGHT}{row[1]}{Style.RESET_ALL}")
+        print(f"     {Fore.WHITE}{Style.DIM}Due:{Style.RESET_ALL} {Fore.CYAN}{row[2]}{Style.RESET_ALL}  {status}")
+        print(f"  {Fore.WHITE}{Style.DIM}{'─'*39}{Style.RESET_ALL}")
 
 def delete_notification():
-    print(f"{Fore.YELLOW}Enter notification ID to delete: {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  Notification ID to delete: {Style.RESET_ALL}", end="")
     notif_id = input().strip()
 
     if not notif_id.isdigit():
@@ -598,7 +594,7 @@ def delete_notification():
     print(f"{Fore.GREEN}✅ Deleted notification ID {notif_id}!{Style.RESET_ALL}")
 
 def edit_notification():
-    print(f"{Fore.YELLOW}Enter notification ID to edit: {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  Notification ID to edit: {Style.RESET_ALL}", end="")
     notif_id = input().strip()
 
     if not notif_id.isdigit():
@@ -615,13 +611,13 @@ def edit_notification():
         conn.close()
         return
 
-    print(f"{Fore.CYAN}Current message: {row[1]}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}Current due time: {row[2]}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}Current message:  {Fore.WHITE}{Style.BRIGHT}{row[1]}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}Current due time: {Fore.WHITE}{Style.BRIGHT}{row[2]}{Style.RESET_ALL}")
 
-    print(f"{Fore.YELLOW}Enter new message (press Enter to keep): {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  New message (Enter to keep): {Style.RESET_ALL}", end="")
     new_msg = input().strip() or row[1]
 
-    print(f"{Fore.YELLOW}Enter new due time (press Enter to keep): {Style.RESET_ALL}", end="")
+    print(f"  {Fore.YELLOW}▶  New due time (Enter to keep): {Style.RESET_ALL}", end="")
     new_due = input().strip() or row[2]
 
     if new_due != row[2]:
@@ -661,7 +657,7 @@ def send_notifications():
 
     for row in pending:
         msg = row[1]
-        print(f"{Fore.GREEN}📢 Sending: {msg}{Style.RESET_ALL}")
+        print(f"{Fore.GREEN}{Style.BRIGHT}📢 Sending: {msg}{Style.RESET_ALL}")
 
         # Send desktop notification if available
         if NOTIFICATIONS_AVAILABLE and notification is not None and callable(getattr(notification, "notify", None)):
@@ -674,13 +670,11 @@ def send_notifications():
                         timeout=10
                     )
                 else:
-                    print(f"{Fore.YELLOW}⚠️  plyer is installed but notification.notify is not callable. Desktop notifications skipped.{Style.RESET_ALL}")
+                    print(f"{Fore.YELLOW}⚠️  plyer installed but notification.notify is not callable.{Style.RESET_ALL}")
             except Exception as e:
                 print(f"{Fore.RED}❌ Desktop notification failed: {e}{Style.RESET_ALL}")
         elif NOTIFICATIONS_AVAILABLE:
-            print(f"{Fore.YELLOW}⚠️  plyer is installed but notification.notify is not callable. Desktop notifications skipped.{Style.RESET_ALL}")
-        else:
-            print(f"{Fore.YELLOW}⚠️  Desktop notifications are not available.{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}⚠️  plyer installed but notification.notify is not callable.{Style.RESET_ALL}")
 
         # Send to all configured services
         send_telegram_message(f"⏰ Reminder: {msg}")
@@ -697,7 +691,6 @@ def send_notifications():
 
 def background_runner():
     """Runs in a separate thread to check notifications every minute"""
-    print(f"{Fore.CYAN}🔄 Background scheduler started. Checking every minute...{Style.RESET_ALL}")
     while True:
         schedule.run_pending()
         time.sleep(60)
@@ -761,55 +754,50 @@ def system_menu():
         vm.setup_database()
     except ImportError:
         print(f"{Fore.RED}❌ version_manager.py not found in project directory.{Style.RESET_ALL}")
-        input(f"{Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
+        input(f"\n  {Fore.YELLOW}Press Enter...{Style.RESET_ALL}")
         return
 
     while True:
         ver = vm.get_current_version()
         ver_str = f"v{ver}"
-        lpad = (39 - len(ver_str)) // 2
-        rpad = 39 - len(ver_str) - lpad
-        print(f"\n{Fore.CYAN}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║       ⚙️  SYSTEM                      ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{' ' * lpad}{ver_str}{' ' * rpad}║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}1. 📜 View Version History{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. ➕ Add New Version Release{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. ✏️  Edit Version Notes{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. 🔄 Check for Updates{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. ⬅️  Back to Main Menu{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}{'─'*43}{Style.RESET_ALL}")
+        _box(Fore.CYAN, "⚙️  SYSTEM", ver_str)
+        _opt("1", Fore.CYAN,                  "📜", "View Version History")
+        _opt("2", Fore.GREEN + Style.BRIGHT,   "➕", "Add New Version Release")
+        _opt("3", Fore.BLUE  + Style.BRIGHT,   "✏️ ", "Edit Version Notes")
+        _opt("4", Fore.MAGENTA + Style.BRIGHT, "🔄", "Check for Updates")
+        _div()
+        _opt("0", Fore.RED + Style.DIM,        "⬅️ ", "Back to Main Menu")
 
-        choice = input(f"{Fore.YELLOW}Choose: {Style.RESET_ALL}").strip()
+        choice = _prompt("Choose: ")
 
         if choice == "1":
             vm.view_version_history()
-            input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "2":
             vm.add_version_notes()
-            input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "3":
             vm.edit_notes()
-            input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "4":
             current = vm.get_current_version()
             print(f"\n{Fore.CYAN}🔍 Checking for updates...{Style.RESET_ALL}")
-            print(f"{Fore.WHITE}Current version: v{current}{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}Current version: {Fore.YELLOW}{Style.BRIGHT}v{current}{Style.RESET_ALL}")
             latest = check_for_updates()
             if latest is None:
                 print(f"{Fore.RED}❌ Could not reach GitHub. Check your connection.{Style.RESET_ALL}")
             elif _version_tuple(latest) <= _version_tuple(current):
-                print(f"{Fore.WHITE}Latest version:  v{latest}{Style.RESET_ALL}")
+                print(f"  {Fore.WHITE}Latest version:  {Fore.GREEN}{Style.BRIGHT}v{latest}{Style.RESET_ALL}")
                 print(f"{Fore.GREEN}✅ Already up to date!{Style.RESET_ALL}")
             else:
-                print(f"{Fore.YELLOW}Latest version:  v{latest}{Style.RESET_ALL}")
-                print(f"{Fore.YELLOW}🆕 Update available: v{current} → v{latest}{Style.RESET_ALL}")
-                confirm = input(f"{Fore.YELLOW}Update now? (y/N): {Style.RESET_ALL}").strip().lower()
-                if confirm == 'y':
+                print(f"  {Fore.WHITE}Latest version:  {Fore.CYAN}{Style.BRIGHT}v{latest}{Style.RESET_ALL}")
+                print(f"{Fore.YELLOW}🆕 Update available: {Fore.WHITE}v{current}{Fore.YELLOW} → {Fore.CYAN}{Style.BRIGHT}v{latest}{Style.RESET_ALL}")
+                confirm = _prompt("Update now? (y/N): ")
+                if confirm.lower() == 'y':
                     do_update()
                 else:
                     print(f"{Fore.YELLOW}Update skipped.{Style.RESET_ALL}")
-            input(f"\n{Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
         else:
@@ -823,7 +811,7 @@ def _get_app_version() -> str:
         vm.setup_database()
         return vm.get_current_version()
     except Exception:
-        return "1.0.39"
+        return "1.0.40"
 
 
 # ==================== MAIN ====================
@@ -842,31 +830,28 @@ def main():
     scheduler_thread.start()
 
     ver = _get_app_version()
-    print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}🚨 Notification App v{ver} Started!{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}🔄 Background scheduler is running...{Style.RESET_ALL}")
-    print(f"{Fore.CYAN}{'='*70}{Style.RESET_ALL}\n")
+    print(f"\n  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}🔔  Plex Notifier  {Fore.WHITE}v{ver}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}\n")
 
     while True:
         ver = _get_app_version()
         ver_str = f"v{ver}"
-        lpad = (39 - len(ver_str)) // 2
-        rpad = 39 - len(ver_str) - lpad
-        print(f"\n{Fore.WHITE}╔═══════════════════════════════════════╗{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}║       📋 NOTIFICATION MENU            ║{Style.RESET_ALL}")
-        print(f"{Fore.CYAN}║{' ' * lpad}{ver_str}{' ' * rpad}║{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}╚═══════════════════════════════════════╝{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}1. ➕ Add Notification{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}2. 📋 View Notifications{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}3. 📤 Send Due Notifications Now{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}4. ✏️  Edit Notification{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}5. 🗑️  Delete Notification{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}6. 📬 Notification Services{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}7. ⚙️  System  {Fore.CYAN}[{ver_str}]{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}0. 🚪 Exit{Style.RESET_ALL}")
-        print(f"{Fore.WHITE}{'─'*43}{Style.RESET_ALL}")
+        _box(Fore.CYAN, "📋 NOTIFICATION MENU", ver_str)
 
-        choice = input(f"{Fore.YELLOW}Choose an option: {Style.RESET_ALL}").strip()
+        _opt("1", Fore.GREEN  + Style.BRIGHT,  "➕", "Add Notification")
+        _opt("2", Fore.CYAN,                    "📋", "View Notifications")
+        _opt("3", Fore.CYAN,                    "📤", "Send Due Notifications Now")
+        _opt("4", Fore.BLUE   + Style.BRIGHT,  "✏️ ", "Edit Notification")
+        _opt("5", Fore.RED,                     "🗑️ ", "Delete Notification")
+        _div()
+        _opt("6", Fore.MAGENTA + Style.BRIGHT,  "📬", "Notification Services")
+        _opt("7", Fore.WHITE,                   "⚙️ ", f"System  {Fore.CYAN}[{ver_str}]{Style.RESET_ALL}")
+        _div()
+        _opt("0", Fore.RED + Style.DIM,         "🚪", "Exit")
+
+        choice = _prompt("Choose an option: ")
 
         if choice == "1":
             add_notification()
@@ -883,7 +868,7 @@ def main():
         elif choice == "7":
             system_menu()
         elif choice == "0":
-            print(f"\n{Fore.GREEN}👋 Goodbye! Background scheduler will stop.{Style.RESET_ALL}")
+            print(f"\n  {Fore.GREEN}{Style.BRIGHT}👋  Goodbye!{Style.RESET_ALL}\n")
             break
         else:
             print(f"{Fore.RED}❌ Invalid choice. Please try again.{Style.RESET_ALL}")
