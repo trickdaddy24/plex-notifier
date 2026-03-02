@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.40] - 2026-03-02  *(Latest)*
+## [v1.0.41] - 2026-03-02  *(Latest)*
+
+### Added
+
+- Added timezone support — TIMEZONE env var (zoneinfo/tz database), _get_user_tz/_now_in_tz/_tz_label helpers, all due-time inputs and scheduler comparisons now use configured timezone, Set Timezone option in System menu, timezone shown in startup banner and due-time prompt, added tzdata dependency for Windows
+
+## [v1.0.40] - 2026-03-02
 
 ### Added
 

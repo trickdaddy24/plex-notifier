@@ -105,6 +105,9 @@ SEED_VERSIONS = [
     ("013", "1.0.40",
      "Full colorama redesign — added _box/_div/_opt/_prompt UI helpers, distinct colors per action type (green=add, cyan=view, blue=edit, red=delete, magenta=services), Style.BRIGHT accents, service-specific box border colors (Telegram=blue, Discord=magenta, Pushover=yellow, Gmail=red), triangle prompt arrow, improved startup banner",
      "2026-03-02 01:00:00"),
+    ("014", "1.0.41",
+     "Added timezone support — TIMEZONE env var (zoneinfo/tz database), _get_user_tz/_now_in_tz/_tz_label helpers, all due-time inputs and scheduler comparisons now use configured timezone, Set Timezone option in System menu, timezone shown in startup banner and due-time prompt, added tzdata dependency for Windows",
+     "2026-03-02 02:00:00"),
 ]
 
 
@@ -131,7 +134,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "1.0.40"
+    return latest[1] if latest else "1.0.41"
 
 
 def get_latest_version_data():

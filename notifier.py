@@ -7,6 +7,7 @@ from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from datetime import datetime, timedelta
 from colorama import init, Fore, Back, Style
+from zoneinfo import ZoneInfo, ZoneInfoNotFoundError
 import schedule
 import requests
 from dotenv import load_dotenv, set_key
@@ -52,6 +53,31 @@ def _prompt(text="Choose: "):
 
 def _opt(num, color, emoji, label):
     print(f"  {Fore.YELLOW}{Style.BRIGHT}{num}{Style.RESET_ALL}  {color}{emoji}  {label}{Style.RESET_ALL}")
+
+# ── Timezone helpers ───────────────────────────────────────────────────────────
+
+def _get_user_tz():
+    """Return a ZoneInfo for the configured TIMEZONE env var, or None for system local."""
+    tz_name = os.getenv('TIMEZONE', '').strip()
+    if not tz_name:
+        return None
+    try:
+        return ZoneInfo(tz_name)
+    except (ZoneInfoNotFoundError, KeyError):
+        print(f"{Fore.YELLOW}⚠️  Unknown timezone '{tz_name}' in .env — using system local time.{Style.RESET_ALL}")
+        return None
+
+def _now_in_tz() -> datetime:
+    """Current time in the configured timezone as a naive datetime (matches DB storage format)."""
+    tz = _get_user_tz()
+    if tz is None:
+        return datetime.now()
+    return datetime.now(tz).replace(tzinfo=None)
+
+def _tz_label() -> str:
+    """Short timezone label for display in prompts and banners."""
+    tz_name = os.getenv('TIMEZONE', '').strip()
+    return tz_name if tz_name else "system local"
 
 def init_db():
     """Initialize notifications database"""
@@ -460,6 +486,9 @@ def show_complete_env_example():
     print(f"  {Fore.GREEN}EMAIL_PASSWORD=your_app_password{Style.RESET_ALL}")
     print(f"  {Fore.GREEN}EMAIL_RECIPIENT=recipient@email.com{Style.RESET_ALL}\n")
 
+    print(f"  {Fore.YELLOW}# Timezone (optional — leave blank to use server local time){Style.RESET_ALL}")
+    print(f"  {Fore.GREEN}TIMEZONE=America/New_York{Style.RESET_ALL}\n")
+
     print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
 
@@ -528,7 +557,8 @@ def add_notification():
         print(f"{Fore.RED}❌ Message cannot be empty!{Style.RESET_ALL}")
         return
 
-    print(f"  {Fore.YELLOW}▶  Due time (e.g., '{datetime.now().strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
+    now = _now_in_tz()
+    print(f"  {Fore.YELLOW}▶  Due time ({_tz_label()}, e.g., '{now.strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
     due_raw = input().strip()
 
     due_dt = _parse_due_time(due_raw)
@@ -536,10 +566,9 @@ def add_notification():
         print(f"{Fore.RED}❌ Invalid date format! Use YYYY-MM-DD HH:MM{Style.RESET_ALL}")
         return
 
-    now = datetime.now()
     if due_dt <= now:
         print(f"{Fore.RED}❌ {due_dt.strftime('%Y-%m-%d %H:%M')} is in the past!{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}   Current time: {now.strftime('%Y-%m-%d %H:%M')} — enter a future date/time.{Style.RESET_ALL}")
+        print(f"{Fore.YELLOW}   Current time ({_tz_label()}): {now.strftime('%Y-%m-%d %H:%M')} — enter a future date/time.{Style.RESET_ALL}")
         return
 
     # Normalize to zero-padded format so string comparison in the DB is reliable
@@ -625,9 +654,10 @@ def edit_notification():
         if due_dt is None:
             print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
             new_due = row[2]
-        elif due_dt <= datetime.now():
+        elif due_dt <= _now_in_tz():
+            now_display = _now_in_tz().strftime('%Y-%m-%d %H:%M')
             print(f"{Fore.RED}❌ {due_dt.strftime('%Y-%m-%d %H:%M')} is in the past! Keeping original.{Style.RESET_ALL}")
-            print(f"{Fore.YELLOW}   Current time: {datetime.now().strftime('%Y-%m-%d %H:%M')}{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}   Current time ({_tz_label()}): {now_display}{Style.RESET_ALL}")
             new_due = row[2]
         else:
             new_due = due_dt.strftime("%Y-%m-%d %H:%M")
@@ -638,7 +668,7 @@ def edit_notification():
     print(f"{Fore.GREEN}✅ Updated notification ID {notif_id}!{Style.RESET_ALL}")
 
 def send_notifications():
-    now = datetime.now().replace(second=0, microsecond=0)
+    now = _now_in_tz().replace(second=0, microsecond=0)
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute("SELECT * FROM notifications WHERE sent = 0")
@@ -761,10 +791,12 @@ def system_menu():
         ver = vm.get_current_version()
         ver_str = f"v{ver}"
         _box(Fore.CYAN, "⚙️  SYSTEM", ver_str)
+        tz_label = _tz_label()
         _opt("1", Fore.CYAN,                  "📜", "View Version History")
         _opt("2", Fore.GREEN + Style.BRIGHT,   "➕", "Add New Version Release")
         _opt("3", Fore.BLUE  + Style.BRIGHT,   "✏️ ", "Edit Version Notes")
         _opt("4", Fore.MAGENTA + Style.BRIGHT, "🔄", "Check for Updates")
+        _opt("5", Fore.YELLOW + Style.BRIGHT,  "🕐", f"Set Timezone  {Fore.WHITE}{Style.DIM}[{tz_label}]")
         _div()
         _opt("0", Fore.RED + Style.DIM,        "⬅️ ", "Back to Main Menu")
 
@@ -798,6 +830,25 @@ def system_menu():
                 else:
                     print(f"{Fore.YELLOW}Update skipped.{Style.RESET_ALL}")
             input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+        elif choice == "5":
+            print(f"\n{Fore.YELLOW}{Style.BRIGHT}🕐 Set Timezone{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Current: {_tz_label()}{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Examples: America/New_York  America/Chicago  America/Los_Angeles{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}          Europe/London  Europe/Paris  Asia/Tokyo{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Full list: https://en.wikipedia.org/wiki/List_of_tz_database_time_zones{Style.RESET_ALL}")
+            new_tz = _prompt("Timezone (Enter to cancel): ")
+            if new_tz:
+                try:
+                    ZoneInfo(new_tz)  # validate before saving
+                    set_key(str(ENV_PATH), 'TIMEZONE', new_tz)
+                    os.environ['TIMEZONE'] = new_tz
+                    load_dotenv(str(ENV_PATH), override=True)
+                    print(f"{Fore.GREEN}✅ Timezone set to {new_tz}{Style.RESET_ALL}")
+                except (ZoneInfoNotFoundError, KeyError):
+                    print(f"{Fore.RED}❌ Unknown timezone '{new_tz}' — not saved.{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.YELLOW}Cancelled — timezone unchanged.{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
         else:
@@ -811,7 +862,7 @@ def _get_app_version() -> str:
         vm.setup_database()
         return vm.get_current_version()
     except Exception:
-        return "1.0.40"
+        return "1.0.41"
 
 
 # ==================== MAIN ====================
@@ -833,7 +884,8 @@ def main():
     print(f"\n  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     print(f"  {Fore.CYAN}{Style.BRIGHT}🔔  Plex Notifier  {Fore.WHITE}v{ver}{Style.RESET_ALL}")
     print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
-    print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}\n")
+    print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}")
+    print(f"  {Fore.WHITE}{Style.DIM}🕐  Timezone: {Fore.YELLOW}{Style.BRIGHT}{_tz_label()}{Style.RESET_ALL}\n")
 
     while True:
         ver = _get_app_version()

@@ -102,6 +102,10 @@ EMAIL_SMTP_PORT=587
 EMAIL_SENDER=
 EMAIL_PASSWORD=
 EMAIL_RECIPIENT=
+
+# Timezone (optional — leave blank to use server local time)
+# Examples: America/New_York  America/Chicago  America/Los_Angeles  Europe/London
+TIMEZONE=
 ENVFILE
     echo "✅ .env created at $INSTALL_DIR/.env"
     echo "   Tip: You can set credentials from inside the app (option 6 → service → option 2)"
