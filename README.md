@@ -1,4 +1,4 @@
-# Notification App
+# Notifier
 
 A Python CLI tool for scheduling and delivering reminders across multiple notification platforms — Telegram, Discord, Pushover, and Gmail — with a built-in SQLite-backed scheduler and an integrated version management system.
 
@@ -38,8 +38,8 @@ git --version
 
 **3. Clone the repo**
 ```cmd
-git clone https://github.com/trickdaddy24/plex-notifier.git
-cd plex-notifier
+git clone https://github.com/trickdaddy24/notifier.git
+cd notifier
 ```
 
 **4. Create and activate a virtual environment**
@@ -102,8 +102,8 @@ brew install git
 
 **3. Clone the repo**
 ```bash
-git clone https://github.com/trickdaddy24/plex-notifier.git
-cd plex-notifier
+git clone https://github.com/trickdaddy24/notifier.git
+cd notifier
 ```
 
 **4. Create and activate a virtual environment**
@@ -139,20 +139,20 @@ python notifier.py
 **One-liner install (recommended)**
 
 ```bash
-bash <(curl -sL https://raw.githubusercontent.com/trickdaddy24/plex-notifier/main/install.sh)
+bash <(curl -sL https://raw.githubusercontent.com/trickdaddy24/notifier/main/install.sh)
 ```
 
 The script will:
 - Verify Python 3.10+ (and offer install instructions if missing)
 - Install `git` and `libnotify-bin` if not present
-- Clone the repo to `~/plex-notifier`
+- Clone the repo to `~/notifier`
 - Create a virtual environment and install all dependencies
 - Generate a starter `.env` file
-- Create a `plex-notifier` launch command available system-wide
+- Create a `notifier` launch command available system-wide
 
 Then run:
 ```bash
-plex-notifier
+notifier
 ```
 
 > **If the command is not found** after install, reload your shell:
@@ -181,8 +181,8 @@ sudo pacman -S python python-pip git libnotify
 ```
 
 ```bash
-git clone https://github.com/trickdaddy24/plex-notifier.git
-cd plex-notifier
+git clone https://github.com/trickdaddy24/notifier.git
+cd notifier
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -279,7 +279,7 @@ Release notes are stored in `version_notes.db` and `CHANGELOG.md` is regenerated
 ## Project Structure
 
 ```
-plex-notifier/
+notifier/
 ├── notifier.py          # Main application
 ├── version_manager.py   # Version tracking & changelog generation
 ├── requirements.txt

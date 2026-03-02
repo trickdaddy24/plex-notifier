@@ -737,7 +737,7 @@ def check_for_updates():
     import urllib.request
     import re
     try:
-        url = "https://raw.githubusercontent.com/trickdaddy24/plex-notifier/main/CHANGELOG.md"
+        url = "https://raw.githubusercontent.com/trickdaddy24/notifier/main/CHANGELOG.md"
         with urllib.request.urlopen(url, timeout=10) as resp:
             content = resp.read().decode('utf-8')
         match = re.search(r'## \[v([0-9]+\.[0-9]+\.[0-9]+)\]', content)
@@ -862,7 +862,7 @@ def _get_app_version() -> str:
         vm.setup_database()
         return vm.get_current_version()
     except Exception:
-        return "1.0.41"
+        return "1.0.42"
 
 
 # ==================== MAIN ====================
@@ -882,7 +882,7 @@ def main():
 
     ver = _get_app_version()
     print(f"\n  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
-    print(f"  {Fore.CYAN}{Style.BRIGHT}🔔  Plex Notifier  {Fore.WHITE}v{ver}{Style.RESET_ALL}")
+    print(f"  {Fore.CYAN}{Style.BRIGHT}🔔  Notifier  {Fore.WHITE}v{ver}{Style.RESET_ALL}")
     print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}")
     print(f"  {Fore.WHITE}{Style.DIM}🕐  Timezone: {Fore.YELLOW}{Style.BRIGHT}{_tz_label()}{Style.RESET_ALL}\n")

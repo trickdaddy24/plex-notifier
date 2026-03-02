@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# install.sh — Ubuntu / Linux installer for Plex Notifier
+# install.sh — Ubuntu / Linux installer for Notifier
 set -e
 
-REPO="https://github.com/trickdaddy24/plex-notifier.git"
-INSTALL_DIR="$HOME/plex-notifier"
+REPO="https://github.com/trickdaddy24/notifier.git"
+INSTALL_DIR="$HOME/notifier"
 
 echo ""
-echo "🔔 Plex Notifier — Installer"
+echo "🔔 Notifier — Installer"
 echo "=============================="
 echo ""
 
@@ -63,7 +63,7 @@ if [ -d "$INSTALL_DIR/.git" ]; then
     git -C "$INSTALL_DIR" fetch origin
     git -C "$INSTALL_DIR" reset --hard origin/main
 else
-    echo "📦 Cloning plex-notifier to $INSTALL_DIR..."
+    echo "📦 Cloning notifier to $INSTALL_DIR..."
     git clone "$REPO" "$INSTALL_DIR"
 fi
 echo "✅ Repo ready at $INSTALL_DIR"
@@ -114,7 +114,7 @@ else
 fi
 
 # ── Launcher script ────────────────────────────────────────────
-LAUNCHER="$HOME/.local/bin/plex-notifier"
+LAUNCHER="$HOME/.local/bin/notifier"
 mkdir -p "$HOME/.local/bin"
 cat > "$LAUNCHER" << LAUNCHER_EOF
 #!/usr/bin/env bash
@@ -135,17 +135,17 @@ echo ""
 echo "✅ Installation complete!"
 echo ""
 echo "Run the app:"
-echo "  plex-notifier"
+echo "  notifier"
 echo ""
 echo "Or directly:"
 echo "  cd $INSTALL_DIR && source .venv/bin/activate && python notifier.py"
 echo ""
 echo "First-time setup:"
-echo "  1. Run: plex-notifier"
+echo "  1. Run: notifier"
 echo "  2. Go to option 6 — Notification Services"
 echo "  3. Choose a service and select option 2 — Set Credentials"
 echo "  4. Enter your tokens/keys — saved automatically to .env"
 echo ""
-echo "⚠️  If 'plex-notifier' command is not found after install, run:"
+echo "⚠️  If 'notifier' command is not found after install, run:"
 echo "   source ~/.bashrc"
 echo ""

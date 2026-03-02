@@ -88,7 +88,7 @@ SEED_VERSIONS = [
      "Added interactive Set Credentials option (option 2) to all service menus — Telegram, Discord, Pushover, Gmail. Saves tokens directly to .env via dotenv.set_key, updates running session immediately, Gmail password hidden via getpass",
      "2026-03-01 22:00:00"),
     ("008", "1.0.35",
-     "Added install.sh one-liner installer for Ubuntu/Linux — auto-installs Python, git, libnotify, venv, deps, generates starter .env, creates plex-notifier system launcher. Updated README Linux section",
+     "Added install.sh one-liner installer for Ubuntu/Linux — auto-installs Python, git, libnotify, venv, deps, generates starter .env, creates notifier system launcher. Updated README Linux section",
      "2026-03-01 23:00:00"),
     ("009", "1.0.36",
      "Fixed notification scheduling fires immediately bug — added _parse_due_time helper, normalize due_time to zero-padded format on save, reject past dates, use datetime comparison instead of string comparison in send_notifications",
@@ -108,6 +108,9 @@ SEED_VERSIONS = [
     ("014", "1.0.41",
      "Added timezone support — TIMEZONE env var (zoneinfo/tz database), _get_user_tz/_now_in_tz/_tz_label helpers, all due-time inputs and scheduler comparisons now use configured timezone, Set Timezone option in System menu, timezone shown in startup banner and due-time prompt, added tzdata dependency for Windows",
      "2026-03-02 02:00:00"),
+    ("015", "1.0.42",
+     "Renamed project from plex-notifier to notifier — updated GitHub repo name, git remote URL, install.sh REPO/INSTALL_DIR/launcher, check_for_updates GitHub URL, startup banner, README title and all clone URLs, project structure label",
+     "2026-03-02 03:00:00"),
 ]
 
 
@@ -134,7 +137,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "1.0.41"
+    return latest[1] if latest else "1.0.42"
 
 
 def get_latest_version_data():
