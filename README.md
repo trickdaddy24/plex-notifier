@@ -11,31 +11,194 @@ A Python CLI tool for scheduling and delivering reminders across multiple notifi
 - **Service health checks** — verify each integration directly from the menu
 - **Version management** — built-in release tracker with auto-generated `CHANGELOG.md` (System menu → Version History)
 
-## Requirements
-
-- Python 3.10+
-- Dependencies listed in `requirements.txt`
+---
 
 ## Installation
 
-```bash
-# 1. Clone the repo
-git clone https://github.com/<your-username>/plex-notifier.git
-cd plex-notifier
+### Windows 11
 
-# 2. Create and activate a virtual environment
-python -m venv .venv
-# Windows
-.venv\Scripts\activate
-# macOS / Linux
-source .venv/bin/activate
+**1. Install Python 3.10+**
 
-# 3. Install dependencies
-pip install -r requirements.txt
+Download and run the installer from [python.org](https://www.python.org/downloads/windows/).
+On the first screen, check **"Add Python to PATH"** before clicking Install.
 
-# 4. Set up your .env file (see Configuration below)
-cp .env.example .env   # then edit .env with your credentials
+Verify the install:
+```cmd
+python --version
 ```
+
+**2. Install Git**
+
+Download from [git-scm.com](https://git-scm.com/download/win) and run the installer with default settings.
+
+Verify:
+```cmd
+git --version
+```
+
+**3. Clone the repo**
+```cmd
+git clone https://github.com/trickdaddy24/plex-notifier.git
+cd plex-notifier
+```
+
+**4. Create and activate a virtual environment**
+```cmd
+python -m venv .venv
+.venv\Scripts\activate
+```
+You should see `(.venv)` appear at the start of your prompt.
+
+**5. Install dependencies**
+```cmd
+pip install -r requirements.txt
+```
+
+**6. Create your `.env` file**
+```cmd
+copy .env.example .env
+```
+Then open `.env` in Notepad or any editor and fill in your credentials (see [Configuration](#configuration) below).
+
+**7. Run the app**
+```cmd
+python notifier.py
+```
+
+> **Desktop notifications on Windows 11** are handled automatically via `plyer` — no extra setup needed.
+
+---
+
+### macOS
+
+**1. Install Python 3.10+**
+
+The recommended way is via [Homebrew](https://brew.sh). If you don't have Homebrew, install it first:
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+```
+
+Then install Python:
+```bash
+brew install python
+```
+
+Verify:
+```bash
+python3 --version
+```
+
+**2. Install Git**
+
+Git ships with Xcode Command Line Tools. If you don't have it:
+```bash
+xcode-select --install
+```
+
+Or install via Homebrew:
+```bash
+brew install git
+```
+
+**3. Clone the repo**
+```bash
+git clone https://github.com/trickdaddy24/plex-notifier.git
+cd plex-notifier
+```
+
+**4. Create and activate a virtual environment**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+You should see `(.venv)` appear at the start of your prompt.
+
+**5. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+**6. Create your `.env` file**
+```bash
+cp .env.example .env
+```
+Then open `.env` in any editor and fill in your credentials (see [Configuration](#configuration) below).
+
+**7. Run the app**
+```bash
+python notifier.py
+```
+
+> **Desktop notifications on macOS** require granting terminal notification permissions.
+> Go to **System Settings → Notifications** and allow notifications for your terminal app (Terminal or iTerm2).
+
+---
+
+### Linux (Ubuntu / Debian / Fedora / Arch)
+
+**1. Install Python 3.10+**
+
+Ubuntu / Debian:
+```bash
+sudo apt update
+sudo apt install python3 python3-pip python3-venv git -y
+```
+
+Fedora:
+```bash
+sudo dnf install python3 python3-pip git -y
+```
+
+Arch:
+```bash
+sudo pacman -S python python-pip git
+```
+
+Verify:
+```bash
+python3 --version
+```
+
+**2. Clone the repo**
+```bash
+git clone https://github.com/trickdaddy24/plex-notifier.git
+cd plex-notifier
+```
+
+**3. Create and activate a virtual environment**
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+You should see `(.venv)` appear at the start of your prompt.
+
+**4. Install dependencies**
+```bash
+pip install -r requirements.txt
+```
+
+> **Desktop notifications on Linux** require a notification daemon. Install one if needed:
+> ```bash
+> # Ubuntu / Debian
+> sudo apt install libnotify-bin notification-daemon -y
+> # Fedora
+> sudo dnf install libnotify -y
+> # Arch
+> sudo pacman -S libnotify
+> ```
+
+**5. Create your `.env` file**
+```bash
+cp .env.example .env
+```
+Then open `.env` in any editor and fill in your credentials (see [Configuration](#configuration) below).
+
+**6. Run the app**
+```bash
+python notifier.py
+```
+
+---
 
 ## Configuration
 
@@ -78,6 +241,8 @@ Each service is optional — unconfigured services are silently skipped when sen
 1. Google Account → Security → 2-Step Verification → App Passwords
 2. Generate a password for "Mail" and use it as `EMAIL_PASSWORD`
 
+---
+
 ## Usage
 
 ```bash
@@ -89,6 +254,7 @@ python notifier.py
 ```
 ╔═══════════════════════════════════════╗
 ║       NOTIFICATION MENU               ║
+║             v1.0.33                   ║
 ╚═══════════════════════════════════════╝
 1.  Add Notification
 2.  View Notifications
@@ -96,7 +262,7 @@ python notifier.py
 4.  Edit Notification
 5.  Delete Notification
 6.  Notification Services
-7.  System
+7.  System  [v1.0.33]
 0.  Exit
 ```
 
@@ -107,6 +273,7 @@ Provides access to the integrated version management system:
 ```
 ╔═══════════════════════════════════════╗
 ║       SYSTEM                          ║
+║             v1.0.33                   ║
 ╚═══════════════════════════════════════╝
 1.  View Version History
 2.  Add New Version Release
@@ -115,6 +282,8 @@ Provides access to the integrated version management system:
 ```
 
 Release notes are stored in `version_notes.db` and `CHANGELOG.md` is regenerated automatically after every add or edit.
+
+---
 
 ## Project Structure
 
@@ -129,6 +298,8 @@ plex-notifier/
 ├── notifications.db     # Runtime — excluded from repo
 └── version_notes.db     # Runtime — excluded from repo
 ```
+
+---
 
 ## License
 
