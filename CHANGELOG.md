@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.34] - 2026-03-01  *(Latest)*
+## [v1.0.35] - 2026-03-01  *(Latest)*
+
+### Added
+
+- Added install.sh one-liner installer for Ubuntu/Linux — auto-installs Python, git, libnotify, venv, deps, starter .env, and plex-notifier launcher. Updated README Linux section with one-liner and manual install instructions
+
+## [v1.0.34] - 2026-03-01
 
 ### Added
 

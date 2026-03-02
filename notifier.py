@@ -731,7 +731,7 @@ def _get_app_version() -> str:
         vm.setup_database()
         return vm.get_current_version()
     except Exception:
-        return "1.0.34"
+        return "1.0.35"
 
 
 # ==================== MAIN ====================

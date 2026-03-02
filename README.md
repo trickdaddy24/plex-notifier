@@ -134,67 +134,58 @@ python notifier.py
 
 ---
 
-### Linux (Ubuntu / Debian / Fedora / Arch)
+### Linux (Ubuntu / Debian)
 
-**1. Install Python 3.10+**
+**One-liner install (recommended)**
+
+```bash
+bash <(curl -sL https://raw.githubusercontent.com/trickdaddy24/plex-notifier/main/install.sh)
+```
+
+The script will:
+- Verify Python 3.10+ (and offer install instructions if missing)
+- Install `git` and `libnotify-bin` if not present
+- Clone the repo to `~/plex-notifier`
+- Create a virtual environment and install all dependencies
+- Generate a starter `.env` file
+- Create a `plex-notifier` launch command available system-wide
+
+Then run:
+```bash
+plex-notifier
+```
+
+> **If the command is not found** after install, reload your shell:
+> ```bash
+> source ~/.bashrc
+> ```
+
+---
+
+**Manual install (any distro)**
 
 Ubuntu / Debian:
 ```bash
 sudo apt update
-sudo apt install python3 python3-pip python3-venv git -y
+sudo apt install python3 python3-pip python3-venv git libnotify-bin -y
 ```
 
 Fedora:
 ```bash
-sudo dnf install python3 python3-pip git -y
+sudo dnf install python3 python3-pip git libnotify -y
 ```
 
 Arch:
 ```bash
-sudo pacman -S python python-pip git
+sudo pacman -S python python-pip git libnotify
 ```
 
-Verify:
-```bash
-python3 --version
-```
-
-**2. Clone the repo**
 ```bash
 git clone https://github.com/trickdaddy24/plex-notifier.git
 cd plex-notifier
-```
-
-**3. Create and activate a virtual environment**
-```bash
 python3 -m venv .venv
 source .venv/bin/activate
-```
-You should see `(.venv)` appear at the start of your prompt.
-
-**4. Install dependencies**
-```bash
 pip install -r requirements.txt
-```
-
-> **Desktop notifications on Linux** require a notification daemon. Install one if needed:
-> ```bash
-> # Ubuntu / Debian
-> sudo apt install libnotify-bin notification-daemon -y
-> # Fedora
-> sudo dnf install libnotify -y
-> # Arch
-> sudo pacman -S libnotify
-> ```
-
-**5. Create your `.env` file**
-```bash
-cp .env.example .env
-```
-Then open `.env` in any editor and fill in your credentials (see [Configuration](#configuration) below).
-
-**6. Run the app**
-```bash
 python notifier.py
 ```
 
