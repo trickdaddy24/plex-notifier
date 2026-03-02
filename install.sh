@@ -60,7 +60,8 @@ echo "✅ libnotify found"
 echo ""
 if [ -d "$INSTALL_DIR/.git" ]; then
     echo "🔄 Existing install found — updating $INSTALL_DIR..."
-    git -C "$INSTALL_DIR" pull
+    git -C "$INSTALL_DIR" fetch origin
+    git -C "$INSTALL_DIR" reset --hard origin/main
 else
     echo "📦 Cloning plex-notifier to $INSTALL_DIR..."
     git clone "$REPO" "$INSTALL_DIR"
