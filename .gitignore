@@ -1,0 +1,39 @@
+# Environment & secrets — NEVER commit these
+.env
+.env.*
+
+# Databases
+notifications.db
+version_notes.db
+
+# Logs
+*.log
+version_management.log
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Claude Code
+.claude/
