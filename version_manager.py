@@ -111,6 +111,9 @@ SEED_VERSIONS = [
     ("015", "1.0.42",
      "Renamed project from plex-notifier to notifier — updated GitHub repo name, git remote URL, install.sh REPO/INSTALL_DIR/launcher, check_for_updates GitHub URL, startup banner, README title and all clone URLs, project structure label",
      "2026-03-02 03:00:00"),
+    ("016", "1.0.43",
+     "Added daily repeat notifications — repeat_time column (auto-migrates existing DB), _next_daily_time helper, reschedule-on-fire logic, repeat display in view, repeat editing in edit menu. Added heartbeat — send_heartbeat() pings all configured services, HEARTBEAT_INTERVAL env var, System menu option 6 to configure interval, shown in startup banner",
+     "2026-03-03 00:00:00"),
 ]
 
 
@@ -137,7 +140,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "1.0.42"
+    return latest[1] if latest else "1.0.43"
 
 
 def get_latest_version_data():

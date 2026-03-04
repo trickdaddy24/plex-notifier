@@ -5,7 +5,14 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v1.0.42] - 2026-03-02  *(Latest)*
+## [v1.0.43] - 2026-03-03  *(Latest)*
+
+### Added
+
+- Daily repeat notifications — `repeat_time` column (auto-migrates existing DB), `_next_daily_time` helper, reschedule-on-fire logic, repeat display in view, repeat editing in edit menu
+- Heartbeat — `send_heartbeat()` pings all configured services on a schedule; configure interval via System → option 6 (`HEARTBEAT_INTERVAL` env var); shown in startup banner when active
+
+## [v1.0.42] - 2026-03-02
 
 ### Changed
 
