@@ -84,7 +84,13 @@ def init_db():
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
     c.execute('''CREATE TABLE IF NOT EXISTS notifications
-                 (id INTEGER PRIMARY KEY, message TEXT, due_time TEXT, sent BOOLEAN DEFAULT 0)''')
+                 (id INTEGER PRIMARY KEY, message TEXT, due_time TEXT, sent BOOLEAN DEFAULT 0,
+                  repeat_time TEXT)''')
+    # Migrate existing databases
+    try:
+        c.execute("ALTER TABLE notifications ADD COLUMN repeat_time TEXT")
+    except sqlite3.OperationalError:
+        pass  # column already exists
     conn.commit()
     conn.close()
 
@@ -283,6 +289,25 @@ def verify_email_config():
     print(f"{Fore.WHITE}From: {sender_email}{Style.RESET_ALL}")
     print(f"{Fore.WHITE}To: {recipient_email}{Style.RESET_ALL}")
     return send_email_message("✅ Gmail verification successful!")
+
+# ==================== HEARTBEAT ====================
+
+def send_heartbeat():
+    """Send a heartbeat ping to all configured services."""
+    now = _now_in_tz()
+    msg = f"💓 Heartbeat: Notifier is running — {now.strftime('%Y-%m-%d %H:%M')} ({_tz_label()})"
+    print(f"{Fore.MAGENTA}💓 Sending heartbeat...{Style.RESET_ALL}")
+
+    if NOTIFICATIONS_AVAILABLE and notification is not None and callable(getattr(notification, "notify", None)):
+        try:
+            notification.notify(title="💓 Heartbeat", message="Notifier is running", timeout=5)
+        except Exception:
+            pass
+
+    send_telegram_message(msg)
+    send_discord_message(msg)
+    send_pushover_message(msg)
+    send_email_message(msg)
 
 # ==================== NOTIFICATION MENUS ====================
 
@@ -550,6 +575,18 @@ def _parse_due_time(due_str):
             continue
     return None
 
+def _next_daily_time(time_str):
+    """Return the next future datetime for a daily HH:MM schedule."""
+    try:
+        h, m = map(int, time_str.split(':'))
+    except (ValueError, AttributeError):
+        return None
+    now = _now_in_tz()
+    candidate = now.replace(hour=h, minute=m, second=0, microsecond=0)
+    if candidate <= now:
+        candidate += timedelta(days=1)
+    return candidate
+
 def add_notification():
     print(f"  {Fore.YELLOW}▶  Enter message: {Style.RESET_ALL}", end="")
     msg = input().strip()
@@ -557,30 +594,49 @@ def add_notification():
         print(f"{Fore.RED}❌ Message cannot be empty!{Style.RESET_ALL}")
         return
 
-    now = _now_in_tz()
-    print(f"  {Fore.YELLOW}▶  Due time ({_tz_label()}, e.g., '{now.strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
-    due_raw = input().strip()
+    repeat_choice = _prompt("Repeat daily? (y/N): ").lower()
+    repeat_time = None
 
-    due_dt = _parse_due_time(due_raw)
-    if due_dt is None:
-        print(f"{Fore.RED}❌ Invalid date format! Use YYYY-MM-DD HH:MM{Style.RESET_ALL}")
-        return
-
-    if due_dt <= now:
-        print(f"{Fore.RED}❌ {due_dt.strftime('%Y-%m-%d %H:%M')} is in the past!{Style.RESET_ALL}")
-        print(f"{Fore.YELLOW}   Current time ({_tz_label()}): {now.strftime('%Y-%m-%d %H:%M')} — enter a future date/time.{Style.RESET_ALL}")
-        return
-
-    # Normalize to zero-padded format so string comparison in the DB is reliable
-    due = due_dt.strftime("%Y-%m-%d %H:%M")
+    if repeat_choice == 'y':
+        print(f"  {Fore.YELLOW}▶  Time of day ({_tz_label()}, e.g., '09:00'): {Style.RESET_ALL}", end="")
+        time_raw = input().strip()
+        try:
+            datetime.strptime(time_raw, "%H:%M")
+        except ValueError:
+            print(f"{Fore.RED}❌ Invalid time format! Use HH:MM{Style.RESET_ALL}")
+            return
+        repeat_time = time_raw
+        due_dt = _next_daily_time(repeat_time)
+        if due_dt is None:
+            print(f"{Fore.RED}❌ Could not compute next occurrence.{Style.RESET_ALL}")
+            return
+        due = due_dt.strftime("%Y-%m-%d %H:%M")
+        print(f"  {Fore.CYAN}First occurrence: {Fore.WHITE}{Style.BRIGHT}{due} ({_tz_label()}){Style.RESET_ALL}")
+    else:
+        now = _now_in_tz()
+        print(f"  {Fore.YELLOW}▶  Due time ({_tz_label()}, e.g., '{now.strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
+        due_raw = input().strip()
+        due_dt = _parse_due_time(due_raw)
+        if due_dt is None:
+            print(f"{Fore.RED}❌ Invalid date format! Use YYYY-MM-DD HH:MM{Style.RESET_ALL}")
+            return
+        if due_dt <= now:
+            print(f"{Fore.RED}❌ {due_dt.strftime('%Y-%m-%d %H:%M')} is in the past!{Style.RESET_ALL}")
+            print(f"{Fore.YELLOW}   Current time ({_tz_label()}): {now.strftime('%Y-%m-%d %H:%M')} — enter a future date/time.{Style.RESET_ALL}")
+            return
+        due = due_dt.strftime("%Y-%m-%d %H:%M")
 
     conn = sqlite3.connect(DB_NAME)
     c = conn.cursor()
-    c.execute("INSERT INTO notifications (message, due_time) VALUES (?, ?)", (msg, due))
+    c.execute("INSERT INTO notifications (message, due_time, repeat_time) VALUES (?, ?, ?)",
+              (msg, due, repeat_time))
     notification_id = c.lastrowid
     conn.commit()
     conn.close()
-    print(f"{Fore.GREEN}✅ Added! ID: {notification_id} | Due: {due}{Style.RESET_ALL}")
+    if repeat_time:
+        print(f"{Fore.GREEN}✅ Added! ID: {notification_id} | Daily at {repeat_time} | Next: {due}{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.GREEN}✅ Added! ID: {notification_id} | Due: {due}{Style.RESET_ALL}")
 
 def view_notifications():
     conn = sqlite3.connect(DB_NAME)
@@ -599,6 +655,9 @@ def view_notifications():
         id_clr = Fore.YELLOW + Style.BRIGHT
         print(f"  {id_clr}#{row[0]}{Style.RESET_ALL}  {Fore.WHITE}{Style.BRIGHT}{row[1]}{Style.RESET_ALL}")
         print(f"     {Fore.WHITE}{Style.DIM}Due:{Style.RESET_ALL} {Fore.CYAN}{row[2]}{Style.RESET_ALL}  {status}")
+        repeat_t = row[4] if len(row) > 4 else None
+        if repeat_t:
+            print(f"     {Fore.WHITE}{Style.DIM}Repeat:{Style.RESET_ALL} {Fore.MAGENTA}Daily at {repeat_t}{Style.RESET_ALL}")
         print(f"  {Fore.WHITE}{Style.DIM}{'─'*39}{Style.RESET_ALL}")
 
 def delete_notification():
@@ -640,29 +699,89 @@ def edit_notification():
         conn.close()
         return
 
+    repeat_t = row[4] if len(row) > 4 else None
+
     print(f"  {Fore.CYAN}Current message:  {Fore.WHITE}{Style.BRIGHT}{row[1]}{Style.RESET_ALL}")
-    print(f"  {Fore.CYAN}Current due time: {Fore.WHITE}{Style.BRIGHT}{row[2]}{Style.RESET_ALL}")
+    if repeat_t:
+        print(f"  {Fore.CYAN}Repeat:           {Fore.WHITE}{Style.BRIGHT}Daily at {repeat_t}{Style.RESET_ALL}")
+        print(f"  {Fore.CYAN}Next due:         {Fore.WHITE}{Style.BRIGHT}{row[2]}{Style.RESET_ALL}")
+    else:
+        print(f"  {Fore.CYAN}Due time:         {Fore.WHITE}{Style.BRIGHT}{row[2]}{Style.RESET_ALL}")
 
     print(f"  {Fore.YELLOW}▶  New message (Enter to keep): {Style.RESET_ALL}", end="")
     new_msg = input().strip() or row[1]
+    new_due = row[2]
+    new_repeat_time = repeat_t
 
-    print(f"  {Fore.YELLOW}▶  New due time (Enter to keep): {Style.RESET_ALL}", end="")
-    new_due = input().strip() or row[2]
+    if repeat_t:
+        print(f"\n  {Fore.CYAN}Edit schedule?{Style.RESET_ALL}")
+        _opt("1", Fore.WHITE + Style.DIM,    "↩️ ", "Keep daily (change time only)")
+        _opt("2", Fore.WHITE + Style.DIM,    "1️⃣ ", "Convert to one-time")
+        _opt("0", Fore.WHITE + Style.DIM,    "⏭️ ", "Keep everything as-is")
+        sched_edit = _prompt("Choose: ")
+        if sched_edit == "1":
+            print(f"  {Fore.YELLOW}▶  New time of day (Enter to keep '{repeat_t}'): {Style.RESET_ALL}", end="")
+            t_raw = input().strip()
+            if t_raw:
+                try:
+                    datetime.strptime(t_raw, "%H:%M")
+                    new_repeat_time = t_raw
+                    next_dt = _next_daily_time(new_repeat_time)
+                    if next_dt:
+                        new_due = next_dt.strftime("%Y-%m-%d %H:%M")
+                        print(f"  {Fore.CYAN}Next occurrence: {Fore.WHITE}{Style.BRIGHT}{new_due}{Style.RESET_ALL}")
+                    else:
+                        print(f"{Fore.RED}❌ Could not compute next occurrence. Keeping original.{Style.RESET_ALL}")
+                        new_repeat_time = repeat_t
+                except ValueError:
+                    print(f"{Fore.RED}❌ Invalid format. Keeping original.{Style.RESET_ALL}")
+        elif sched_edit == "2":
+            now = _now_in_tz()
+            print(f"  {Fore.YELLOW}▶  Due time ({_tz_label()}, e.g., '{now.strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
+            due_raw = input().strip()
+            due_dt = _parse_due_time(due_raw)
+            if due_dt is None:
+                print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
+            elif due_dt <= now:
+                print(f"{Fore.RED}❌ Time is in the past! Keeping original.{Style.RESET_ALL}")
+            else:
+                new_due = due_dt.strftime("%Y-%m-%d %H:%M")
+                new_repeat_time = None
+    else:
+        print(f"\n  {Fore.CYAN}Edit schedule?{Style.RESET_ALL}")
+        _opt("1", Fore.WHITE + Style.DIM,    "↩️ ", "Keep one-time (change due date only)")
+        _opt("2", Fore.GREEN + Style.BRIGHT, "🔁", "Convert to daily repeat")
+        _opt("0", Fore.WHITE + Style.DIM,    "⏭️ ", "Keep everything as-is")
+        sched_edit = _prompt("Choose: ")
+        if sched_edit == "1":
+            print(f"  {Fore.YELLOW}▶  New due time (Enter to keep '{row[2]}'): {Style.RESET_ALL}", end="")
+            due_raw = input().strip()
+            if due_raw:
+                due_dt = _parse_due_time(due_raw)
+                if due_dt is None:
+                    print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
+                elif due_dt <= _now_in_tz():
+                    print(f"{Fore.RED}❌ Time is in the past! Keeping original.{Style.RESET_ALL}")
+                else:
+                    new_due = due_dt.strftime("%Y-%m-%d %H:%M")
+        elif sched_edit == "2":
+            print(f"  {Fore.YELLOW}▶  Time of day ({_tz_label()}, e.g., '09:00'): {Style.RESET_ALL}", end="")
+            t_raw = input().strip()
+            try:
+                datetime.strptime(t_raw, "%H:%M")
+                new_repeat_time = t_raw
+                next_dt = _next_daily_time(new_repeat_time)
+                if next_dt:
+                    new_due = next_dt.strftime("%Y-%m-%d %H:%M")
+                    print(f"  {Fore.CYAN}Next occurrence: {Fore.WHITE}{Style.BRIGHT}{new_due}{Style.RESET_ALL}")
+                else:
+                    print(f"{Fore.RED}❌ Could not compute next occurrence. Keeping original.{Style.RESET_ALL}")
+                    new_repeat_time = None
+            except ValueError:
+                print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
 
-    if new_due != row[2]:
-        due_dt = _parse_due_time(new_due)
-        if due_dt is None:
-            print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
-            new_due = row[2]
-        elif due_dt <= _now_in_tz():
-            now_display = _now_in_tz().strftime('%Y-%m-%d %H:%M')
-            print(f"{Fore.RED}❌ {due_dt.strftime('%Y-%m-%d %H:%M')} is in the past! Keeping original.{Style.RESET_ALL}")
-            print(f"{Fore.YELLOW}   Current time ({_tz_label()}): {now_display}{Style.RESET_ALL}")
-            new_due = row[2]
-        else:
-            new_due = due_dt.strftime("%Y-%m-%d %H:%M")
-
-    c.execute("UPDATE notifications SET message = ?, due_time = ? WHERE id = ?", (new_msg, new_due, notif_id))
+    c.execute("UPDATE notifications SET message=?, due_time=?, sent=0, repeat_time=? WHERE id=?",
+              (new_msg, new_due, new_repeat_time, notif_id))
     conn.commit()
     conn.close()
     print(f"{Fore.GREEN}✅ Updated notification ID {notif_id}!{Style.RESET_ALL}")
@@ -712,8 +831,16 @@ def send_notifications():
         send_pushover_message(f"⏰ Reminder: {msg}")
         send_email_message(f"⏰ Reminder: {msg}")
 
-        # Mark as sent
-        c.execute("UPDATE notifications SET sent = 1 WHERE id = ?", (row[0],))
+        # Reschedule daily repeat or mark as sent
+        if row[4]:  # repeat_time
+            next_due = _next_daily_time(row[4])
+            if next_due:
+                c.execute("UPDATE notifications SET due_time = ? WHERE id = ?",
+                          (next_due.strftime("%Y-%m-%d %H:%M"), row[0]))
+            else:
+                c.execute("UPDATE notifications SET sent = 1 WHERE id = ?", (row[0],))
+        else:
+            c.execute("UPDATE notifications SET sent = 1 WHERE id = ?", (row[0],))
 
     conn.commit()
     conn.close()
@@ -792,11 +919,14 @@ def system_menu():
         ver_str = f"v{ver}"
         _box(Fore.CYAN, "⚙️  SYSTEM", ver_str)
         tz_label = _tz_label()
+        hb_interval = os.getenv('HEARTBEAT_INTERVAL', '0')
+        hb_label = f"every {hb_interval}h" if hb_interval != '0' else "disabled"
         _opt("1", Fore.CYAN,                  "📜", "View Version History")
         _opt("2", Fore.GREEN + Style.BRIGHT,   "➕", "Add New Version Release")
         _opt("3", Fore.BLUE  + Style.BRIGHT,   "✏️ ", "Edit Version Notes")
         _opt("4", Fore.MAGENTA + Style.BRIGHT, "🔄", "Check for Updates")
         _opt("5", Fore.YELLOW + Style.BRIGHT,  "🕐", f"Set Timezone  {Fore.WHITE}{Style.DIM}[{tz_label}]")
+        _opt("6", Fore.MAGENTA + Style.BRIGHT, "💓", f"Heartbeat  {Fore.WHITE}{Style.DIM}[{hb_label}]")
         _div()
         _opt("0", Fore.RED + Style.DIM,        "⬅️ ", "Back to Main Menu")
 
@@ -849,6 +979,21 @@ def system_menu():
             else:
                 print(f"{Fore.YELLOW}Cancelled — timezone unchanged.{Style.RESET_ALL}")
             input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+        elif choice == "6":
+            current_hb = os.getenv('HEARTBEAT_INTERVAL', '0')
+            print(f"\n{Fore.MAGENTA}{Style.BRIGHT}💓 Configure Heartbeat{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Current interval: {current_hb}h (0 = disabled){Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Sends a ping to all configured services at the given interval.{Style.RESET_ALL}")
+            new_hb = _prompt("Interval in hours (0 to disable): ")
+            if new_hb.isdigit():
+                set_key(str(ENV_PATH), 'HEARTBEAT_INTERVAL', new_hb)
+                os.environ['HEARTBEAT_INTERVAL'] = new_hb
+                load_dotenv(str(ENV_PATH), override=True)
+                status = f"every {new_hb}h" if new_hb != '0' else "disabled"
+                print(f"{Fore.GREEN}✅ Heartbeat {status}. Restart app to apply.{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.YELLOW}⚠️  Invalid input — unchanged.{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
         else:
@@ -876,6 +1021,14 @@ def main():
         print(f"{Fore.RED}⚠️  Warning: Could not set up scheduler: {e}{Style.RESET_ALL}")
         print(f"{Fore.YELLOW}Continuing without automatic background checks...{Style.RESET_ALL}")
 
+    # Schedule heartbeat if configured
+    try:
+        interval_h = int(os.getenv('HEARTBEAT_INTERVAL', '0'))
+        if interval_h > 0:
+            schedule.every(interval_h).hours.do(send_heartbeat)
+    except (ValueError, Exception):
+        pass
+
     # Start background thread
     scheduler_thread = threading.Thread(target=background_runner, daemon=True)
     scheduler_thread.start()
@@ -885,7 +1038,14 @@ def main():
     print(f"  {Fore.CYAN}{Style.BRIGHT}🔔  Notifier  {Fore.WHITE}v{ver}{Style.RESET_ALL}")
     print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}")
-    print(f"  {Fore.WHITE}{Style.DIM}🕐  Timezone: {Fore.YELLOW}{Style.BRIGHT}{_tz_label()}{Style.RESET_ALL}\n")
+    print(f"  {Fore.WHITE}{Style.DIM}🕐  Timezone: {Fore.YELLOW}{Style.BRIGHT}{_tz_label()}{Style.RESET_ALL}")
+    try:
+        interval_h = int(os.getenv('HEARTBEAT_INTERVAL', '0'))
+        if interval_h > 0:
+            print(f"  {Fore.MAGENTA}💓  Heartbeat every {interval_h}h{Style.RESET_ALL}")
+    except ValueError:
+        pass
+    print()
 
     while True:
         ver = _get_app_version()
