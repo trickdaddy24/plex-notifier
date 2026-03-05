@@ -114,6 +114,9 @@ SEED_VERSIONS = [
     ("016", "1.0.43",
      "Added daily repeat notifications — repeat_time column (auto-migrates existing DB), _next_daily_time helper, reschedule-on-fire logic, repeat display in view, repeat editing in edit menu. Added heartbeat — send_heartbeat() pings all configured services, HEARTBEAT_INTERVAL env var, System menu option 6 to configure interval, shown in startup banner",
      "2026-03-03 00:00:00"),
+    ("017", "2.0.0",
+     "Major merge release — added logging module with 5MB rotation, db_log audit trail, logs DB table with indexes, due_ts epoch column, recurrence system (daily/weekly/biweekly replacing repeat_time), show_logs() last-100 viewer, export/import JSON, Tkinter GUI (optional), masked() credential display, get_db() WAL context manager, enriched heartbeat with hostname/IP/Python version, send_admin_notification() startup/shutdown alert, send_notifications() epoch-based with ge-1-success logic, 11-option main menu",
+     "2026-03-04 00:00:00"),
 ]
 
 
@@ -140,7 +143,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "1.0.43"
+    return latest[1] if latest else "2.0.0"
 
 
 def get_latest_version_data():
