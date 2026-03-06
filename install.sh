@@ -114,8 +114,9 @@ EMAIL_RECIPIENT=
 # Examples: America/New_York  America/Chicago  America/Los_Angeles  Europe/London
 TIMEZONE=
 
-# Heartbeat interval in hours (0 = disabled)
-HEARTBEAT_INTERVAL=0
+# Heartbeat: set to 0 to disable, any other value to enable.
+# When enabled, fires once daily at a random time between 00:00 and 12:00.
+HEARTBEAT_INTERVAL=24
 ENVFILE
     echo "✅ .env created at $INSTALL_DIR/.env"
     echo "   Tip: You can set credentials from inside the app (option 6 → service → option 2)"

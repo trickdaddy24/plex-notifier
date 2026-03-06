@@ -5,7 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.0.5] - 2026-03-05  *(Latest)*
+## [v2.0.6] - 2026-03-05  *(Latest)*
+
+### Added
+
+- Heartbeat on by default — fires once daily at a random time between 00:00 and 12:00 using `schedule.every().day.at()`; chosen fire time shown in startup banner; set `HEARTBEAT_INTERVAL=0` to disable
+- If no notification services are configured, heartbeat is silently logged to file and DB only (no send attempts); `import random` restored for daily time selection
+
+### Changed
+
+- `install.sh` starter `.env` now sets `HEARTBEAT_INTERVAL=24` (enabled) instead of `0`
+- System menu option 6 prompt updated to reflect enable/disable model instead of hourly interval
+
+## [v2.0.5] - 2026-03-05
 
 ### Fixed
 

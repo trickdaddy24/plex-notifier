@@ -132,6 +132,9 @@ SEED_VERSIONS = [
     ("022", "2.0.5",
      "Fixed About box alignment — each row is now exactly 73 visible chars with # on both sides; rewrote _row() to compute visible inner length before adding color codes, eliminating ANSI escape sequence interference with padding calculation",
      "2026-03-05 03:00:00"),
+    ("023", "2.0.6",
+     "Heartbeat on by default — fires once daily at a random time between 00:00 and 12:00 (schedule.every().day.at()); if no notification services are configured the heartbeat is logged to file and DB only without attempting any sends; HEARTBEAT_INTERVAL=0 still disables it; startup banner shows the chosen daily fire time",
+     "2026-03-05 04:00:00"),
 ]
 
 
@@ -158,7 +161,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "2.0.5"
+    return latest[1] if latest else "2.0.6"
 
 
 def get_latest_version_data():

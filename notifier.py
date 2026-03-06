@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-# notifier.py — Notification App v2.0.5
+# notifier.py — Notification App v2.0.6
 
 import calendar
+import random
 import sqlite3
 import sys
 import time
@@ -430,7 +431,6 @@ def send_heartbeat():
         f"💓 Heartbeat — {now.strftime('%Y-%m-%d %H:%M')} ({_tz_label()})\n"
         f"🖥️ {host} | 🌐 {ip} | 🐍 Python {platform.python_version()}"
     )
-    print(f"{Fore.MAGENTA}💓 Sending heartbeat...{Style.RESET_ALL}")
     logging.info("Heartbeat: %s", msg)
 
     _notify = getattr(notification, "notify", None) if notification is not None else None
@@ -440,6 +440,20 @@ def send_heartbeat():
         except Exception:
             pass
 
+    # Check whether any external service is configured
+    any_configured = any([
+        os.getenv('TELEGRAM_BOT_TOKEN') and os.getenv('TELEGRAM_CHAT_ID'),
+        os.getenv('DISCORD_WEBHOOK_URL'),
+        os.getenv('PUSHOVER_USER_KEY') and os.getenv('PUSHOVER_API_TOKEN'),
+        all([os.getenv('EMAIL_SENDER'), os.getenv('EMAIL_PASSWORD'), os.getenv('EMAIL_RECIPIENT')]),
+    ])
+
+    if not any_configured:
+        db_log(None, "heartbeat", "LOGGED", "No services configured — heartbeat logged only")
+        logging.info("Heartbeat logged only — no notification services configured")
+        return
+
+    print(f"{Fore.MAGENTA}💓 Sending heartbeat...{Style.RESET_ALL}")
     for fn, ch in [
         (send_telegram_message, "telegram"),
         (send_discord_message,  "discord"),
@@ -1272,7 +1286,7 @@ def launch_tkinter_gui():
             refresh_listbox()
 
     root = tk.Tk()
-    root.title("Notifier GUI — v2.0.5")
+    root.title("Notifier GUI — v2.0.6")
     root.geometry("720x460")
     tk.Label(root, text="Reminders", font=("Arial", 14, "bold")).pack(pady=8)
     listbox = tk.Listbox(root, width=95, height=18)
@@ -1395,8 +1409,8 @@ def system_menu():
         ver_str = f"v{ver}"
         _box(Fore.CYAN, "⚙️  SYSTEM", ver_str)
         tz_label   = _tz_label()
-        hb_interval = os.getenv('HEARTBEAT_INTERVAL', '0')
-        hb_label   = f"every {hb_interval}h" if hb_interval != '0' else "disabled"
+        hb_interval = os.getenv('HEARTBEAT_INTERVAL', '24')
+        hb_label    = "daily (00:00–12:00)" if hb_interval != '0' else "disabled"
         _opt("1", Fore.CYAN,                   "📜", "View Version History")
         _opt("2", Fore.GREEN  + Style.BRIGHT,  "➕", "Add New Version Release")
         _opt("3", Fore.BLUE   + Style.BRIGHT,  "✏️ ", "Edit Version Notes")
@@ -1456,11 +1470,13 @@ def system_menu():
                 print(f"{Fore.YELLOW}Cancelled — timezone unchanged.{Style.RESET_ALL}")
             input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "6":
-            current_hb = os.getenv('HEARTBEAT_INTERVAL', '0')
+            current_hb = os.getenv('HEARTBEAT_INTERVAL', '24')
+            current_label = "disabled" if current_hb == '0' else "enabled (daily 00:00–12:00)"
             print(f"\n{Fore.MAGENTA}{Style.BRIGHT}💓 Configure Heartbeat{Style.RESET_ALL}")
-            print(f"  {Fore.WHITE}{Style.DIM}Current interval: {current_hb}h (0 = disabled){Style.RESET_ALL}")
-            print(f"  {Fore.WHITE}{Style.DIM}Sends a ping to all configured services at the given interval.{Style.RESET_ALL}")
-            new_hb = _prompt("Interval in hours (0 to disable): ")
+            print(f"  {Fore.WHITE}{Style.DIM}Current: {current_label}{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Fires once daily at a random time between 00:00 and 12:00.{Style.RESET_ALL}")
+            print(f"  {Fore.WHITE}{Style.DIM}Set to 0 to disable, any other value to enable.{Style.RESET_ALL}")
+            new_hb = _prompt("Enable heartbeat? (0=disable / 1=enable): ")
             if new_hb.isdigit():
                 set_key(str(ENV_PATH), 'HEARTBEAT_INTERVAL', new_hb)
                 os.environ['HEARTBEAT_INTERVAL'] = new_hb
@@ -1511,11 +1527,16 @@ def main():
     except Exception as e:
         print(f"{Fore.RED}⚠️  Warning: Could not set up scheduler: {e}{Style.RESET_ALL}")
 
-    # Schedule heartbeat if configured
+    # Schedule heartbeat — once per day at a random time between 00:00 and 12:00
+    # Default is enabled (HEARTBEAT_INTERVAL != 0); set to 0 in .env to disable.
+    hb_fire_time = None
     try:
-        interval_h = int(os.getenv('HEARTBEAT_INTERVAL', '0'))
-        if interval_h > 0:
-            schedule.every(interval_h).hours.do(send_heartbeat)
+        if int(os.getenv('HEARTBEAT_INTERVAL', '24')) != 0:
+            hh = random.randint(0, 11)
+            mm = random.randint(0, 59)
+            hb_fire_time = f"{hh:02d}:{mm:02d}"
+            schedule.every().day.at(hb_fire_time).do(send_heartbeat)
+            logging.info("Heartbeat scheduled daily at %s", hb_fire_time)
     except (ValueError, Exception):
         pass
 
@@ -1536,12 +1557,10 @@ def main():
     print(f"  {Fore.CYAN}{Style.BRIGHT}{'═'*41}{Style.RESET_ALL}")
     print(f"  {Fore.GREEN}✅  Background scheduler started{Style.RESET_ALL}")
     print(f"  {Fore.WHITE}{Style.DIM}🕐  Timezone: {Fore.YELLOW}{Style.BRIGHT}{_tz_label()}{Style.RESET_ALL}")
-    try:
-        interval_h = int(os.getenv('HEARTBEAT_INTERVAL', '0'))
-        if interval_h > 0:
-            print(f"  {Fore.MAGENTA}💓  Heartbeat every {interval_h}h{Style.RESET_ALL}")
-    except ValueError:
-        pass
+    if hb_fire_time:
+        print(f"  {Fore.MAGENTA}💓  Heartbeat daily at {hb_fire_time} (window: 00:00–12:00){Style.RESET_ALL}")
+    else:
+        print(f"  {Fore.WHITE}{Style.DIM}💓  Heartbeat disabled (HEARTBEAT_INTERVAL=0){Style.RESET_ALL}")
     if not NOTIFICATIONS_AVAILABLE:
         print(f"  {Fore.YELLOW}⚠️   Desktop notifications disabled (install plyer){Style.RESET_ALL}")
     print()
