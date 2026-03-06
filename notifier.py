@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
-# notifier.py — Notification App v2.0.2
+# notifier.py — Notification App v2.0.3
 
+import calendar
 import sqlite3
 import sys
 import time
@@ -220,6 +221,17 @@ def _next_daily_time(time_str):
     return candidate
 
 
+def _next_month_dt(dt: datetime) -> datetime:
+    """Return the same day next calendar month, clamped to the last day if needed."""
+    month = dt.month + 1
+    year  = dt.year
+    if month > 12:
+        month = 1
+        year += 1
+    day = min(dt.day, calendar.monthrange(year, month)[1])
+    return dt.replace(year=year, month=month, day=day)
+
+
 def _next_recurrence_ts(due_ts, recurrence, repeat_time=None):
     """Compute the next due_ts for a recurring notification. Rolls forward if past."""
     now_ts = int(time.time())
@@ -227,6 +239,14 @@ def _next_recurrence_ts(due_ts, recurrence, repeat_time=None):
     if recurrence == "daily" and repeat_time:
         next_dt = _next_daily_time(repeat_time)
         return int(next_dt.timestamp()) if next_dt else None
+
+    if recurrence == "monthly":
+        next_dt = _next_month_dt(datetime.fromtimestamp(due_ts))
+        next_ts = int(next_dt.timestamp())
+        while next_ts <= now_ts:
+            next_dt = _next_month_dt(next_dt)
+            next_ts = int(next_dt.timestamp())
+        return next_ts
 
     steps = {"daily": 86400, "weekly": 604800, "biweekly": 1209600}
     step = steps.get(recurrence, 0)
@@ -736,6 +756,7 @@ def add_notification():
         _opt("1", Fore.WHITE, "📆", "Daily (at a specific time)")
         _opt("2", Fore.WHITE, "📅", "Weekly")
         _opt("3", Fore.WHITE, "🗓️ ", "Biweekly")
+        _opt("4", Fore.WHITE, "📅", "Monthly")
         rtype = _prompt("Choose: ")
 
         if rtype == "1":
@@ -756,8 +777,8 @@ def add_notification():
             due_ts = int(due_dt.timestamp())
             print(f"  {Fore.CYAN}First occurrence: {Fore.WHITE}{Style.BRIGHT}{due} ({_tz_label()}){Style.RESET_ALL}")
 
-        elif rtype in ("2", "3"):
-            recurrence = "weekly" if rtype == "2" else "biweekly"
+        elif rtype in ("2", "3", "4"):
+            recurrence = {"2": "weekly", "3": "biweekly", "4": "monthly"}[rtype]
             now = _now_in_tz()
             print(f"  {Fore.YELLOW}▶  First due time ({_tz_label()}, e.g., '{now.strftime('%Y-%m-%d')} 14:00'): {Style.RESET_ALL}", end="")
             due_raw = input().strip()
@@ -952,6 +973,7 @@ def edit_notification():
                 _opt("1", Fore.WHITE, "📆", "Daily (at a specific time)")
                 _opt("2", Fore.WHITE, "📅", "Weekly")
                 _opt("3", Fore.WHITE, "🗓️ ", "Biweekly")
+                _opt("4", Fore.WHITE, "📅", "Monthly")
                 rtype = _prompt("Choose: ")
                 if rtype == "1":
                     new_recurrence = "daily"
@@ -967,8 +989,8 @@ def edit_notification():
                     except ValueError:
                         print(f"{Fore.RED}❌ Invalid format! Keeping original.{Style.RESET_ALL}")
                         new_recurrence = None
-                elif rtype in ("2", "3"):
-                    new_recurrence = "weekly" if rtype == "2" else "biweekly"
+                elif rtype in ("2", "3", "4"):
+                    new_recurrence = {"2": "weekly", "3": "biweekly", "4": "monthly"}[rtype]
 
         if new_due_ts is None:
             dt = _parse_due_time(new_due)
@@ -1142,7 +1164,7 @@ def import_notifications_from_json():
             if not msg or not due_time:
                 skipped += 1
                 continue
-            if recurrence and recurrence not in ("daily", "weekly", "biweekly"):
+            if recurrence and recurrence not in ("daily", "weekly", "biweekly", "monthly"):
                 skipped += 1
                 continue
             dt = _parse_due_time(due_time)
@@ -1229,7 +1251,7 @@ def launch_tkinter_gui():
         tk.Label(win, text="Recurrence:").pack(pady=4)
         recurrence_var = tk.StringVar(value="None")
         ttk.Combobox(win, textvariable=recurrence_var,
-                     values=["None", "daily", "weekly", "biweekly"], state="readonly").pack(pady=4)
+                     values=["None", "daily", "weekly", "biweekly", "monthly"], state="readonly").pack(pady=4)
         tk.Button(win, text="Save", command=save).pack(pady=8)
         tk.Button(win, text="Cancel", command=win.destroy).pack()
 
@@ -1250,7 +1272,7 @@ def launch_tkinter_gui():
             refresh_listbox()
 
     root = tk.Tk()
-    root.title("Notifier GUI — v2.0.2")
+    root.title("Notifier GUI — v2.0.3")
     root.geometry("720x460")
     tk.Label(root, text="Reminders", font=("Arial", 14, "bold")).pack(pady=8)
     listbox = tk.Listbox(root, width=95, height=18)

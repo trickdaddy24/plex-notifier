@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.0.2] - 2026-03-05  *(Latest)*
+## [v2.0.3] - 2026-03-05  *(Latest)*
+
+### Added
+
+- Added monthly recurrence option — `_next_month_dt()` helper uses stdlib `calendar` for correct end-of-month clamping (e.g. Jan 31 → Feb 28/29); `_next_recurrence_ts()` handles monthly roll-forward; add and edit menus show option **4 Monthly**; Tkinter GUI Combobox includes monthly; JSON import validation accepts monthly
+
+## [v2.0.2] - 2026-03-05
 
 ### Fixed
 

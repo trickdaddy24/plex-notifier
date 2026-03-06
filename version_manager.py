@@ -123,6 +123,9 @@ SEED_VERSIONS = [
     ("019", "2.0.2",
      "Fixed GDBus D-Bus error on headless Linux servers — added DISPLAY/WAYLAND_DISPLAY env check after plyer import; NOTIFICATIONS_AVAILABLE set to False when no graphical display is present, preventing notify-send subprocess from spawning and printing D-Bus errors",
      "2026-03-05 00:00:00"),
+    ("020", "2.0.3",
+     "Added monthly recurrence option — _next_month_dt() helper uses stdlib calendar for correct end-of-month clamping (e.g. Jan 31 -> Feb 28), _next_recurrence_ts() handles monthly roll-forward, add/edit menus show option 4 Monthly, Tkinter GUI Combobox includes monthly, import validation accepts monthly",
+     "2026-03-05 01:00:00"),
 ]
 
 
@@ -149,7 +152,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "2.0.2"
+    return latest[1] if latest else "2.0.3"
 
 
 def get_latest_version_data():
