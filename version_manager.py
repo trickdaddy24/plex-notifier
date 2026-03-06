@@ -120,6 +120,9 @@ SEED_VERSIONS = [
     ("018", "2.0.1",
      "Fixed Pylance type errors — removed unused Back and random imports, moved tkinter imports into launch_tkinter_gui() as lazy import (eliminates tk=None false positives), replaced notification.notify() direct calls with captured _notify callable pattern",
      "2026-03-04 12:00:00"),
+    ("019", "2.0.2",
+     "Fixed GDBus D-Bus error on headless Linux servers — added DISPLAY/WAYLAND_DISPLAY env check after plyer import; NOTIFICATIONS_AVAILABLE set to False when no graphical display is present, preventing notify-send subprocess from spawning and printing D-Bus errors",
+     "2026-03-05 00:00:00"),
 ]
 
 
@@ -146,7 +149,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "2.0.1"
+    return latest[1] if latest else "2.0.2"
 
 
 def get_latest_version_data():

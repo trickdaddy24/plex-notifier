@@ -1,7 +1,8 @@
 # -*- coding: utf-8 -*-
-# notifier.py — Notification App v2.0.1
+# notifier.py — Notification App v2.0.2
 
 import sqlite3
+import sys
 import time
 import threading
 import os
@@ -33,6 +34,12 @@ try:
 except ImportError:
     notification = None
     NOTIFICATIONS_AVAILABLE = False
+
+# On headless Linux (no DISPLAY / WAYLAND_DISPLAY) plyer spawns notify-send
+# which fails with a GDBus D-Bus error.  Disable desktop toasts in that case.
+if NOTIFICATIONS_AVAILABLE and sys.platform.startswith("linux"):
+    if not (os.environ.get("DISPLAY") or os.environ.get("WAYLAND_DISPLAY")):
+        NOTIFICATIONS_AVAILABLE = False
 
 # ── File logging setup (5 MB rotation) ────────────────────────────────────────
 
@@ -1243,7 +1250,7 @@ def launch_tkinter_gui():
             refresh_listbox()
 
     root = tk.Tk()
-    root.title("Notifier GUI — v2.0.1")
+    root.title("Notifier GUI — v2.0.2")
     root.geometry("720x460")
     tk.Label(root, text="Reminders", font=("Arial", 14, "bold")).pack(pady=8)
     listbox = tk.Listbox(root, width=95, height=18)

@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.0.1] - 2026-03-04  *(Latest)*
+## [v2.0.2] - 2026-03-05  *(Latest)*
 
 ### Fixed
 
-- Fixed 27 Pylance type errors — removed unused `Back` and `random` imports, moved tkinter imports into `launch_tkinter_gui()` as a lazy import (eliminates `tk=None` false positives), replaced `notification.notify()` direct calls with a captured `_notify` callable pattern
+- Fixed GDBus D-Bus error on headless Linux servers — added `DISPLAY`/`WAYLAND_DISPLAY` environment variable check after plyer import; `NOTIFICATIONS_AVAILABLE` is set to `False` when no graphical display is detected, preventing `notify-send` from spawning and printing D-Bus errors to the console
+
+## [v2.0.1] - 2026-03-04
+
+### Fixed
+
+- Fixed Pylance type errors — removed unused Back and random imports, moved tkinter imports into launch_tkinter_gui() as lazy import (eliminates tk=None false positives), replaced notification.notify() direct calls with captured _notify callable pattern
 
 ## [v2.0.0] - 2026-03-04
 
