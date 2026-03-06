@@ -126,6 +126,9 @@ SEED_VERSIONS = [
     ("020", "2.0.3",
      "Added monthly recurrence option — _next_month_dt() helper uses stdlib calendar for correct end-of-month clamping (e.g. Jan 31 -> Feb 28), _next_recurrence_ts() handles monthly roll-forward, add/edit menus show option 4 Monthly, Tkinter GUI Combobox includes monthly, import validation accepts monthly",
      "2026-03-05 01:00:00"),
+    ("021", "2.0.4",
+     "Added About screen to System menu option 7 — shows Title, Author(s), Revised date, Description, Version, Entry Point, License, and GitHub URL; Version and Revised date are pulled live from version_notes.db via get_latest_release_info() so they auto-update with every version bump",
+     "2026-03-05 02:00:00"),
 ]
 
 
@@ -152,7 +155,7 @@ def seed_initial_versions():
 def get_current_version() -> str:
     """Return the latest version string from the DB, or '1.0.39' as fallback."""
     latest = get_latest_version_data()
-    return latest[1] if latest else "2.0.3"
+    return latest[1] if latest else "2.0.4"
 
 
 def get_latest_version_data():
@@ -165,6 +168,25 @@ def get_latest_version_data():
         latest = cursor.fetchone()
     logging.info("Fetched latest version data: %s", latest)
     return latest
+
+
+def get_latest_release_info():
+    """Returns (version_str, date_str) for the most recent release, e.g. ('2.0.3', '3/5/2026')."""
+    with get_db() as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT version_number, timestamp FROM releases ORDER BY id DESC LIMIT 1"
+        )
+        row = cursor.fetchone()
+    if not row:
+        return "unknown", "unknown"
+    version, ts = row
+    try:
+        dt = datetime.strptime(ts[:10], "%Y-%m-%d")
+        date_str = f"{dt.month}/{dt.day}/{dt.year}"
+    except (ValueError, TypeError):
+        date_str = ts[:10] if ts else "unknown"
+    return version, date_str
 
 
 def parse_version(version_str: str) -> tuple[int, int, int]:

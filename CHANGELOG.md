@@ -5,7 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [v2.0.3] - 2026-03-05  *(Latest)*
+## [v2.0.4] - 2026-03-05  *(Latest)*
+
+### Added
+
+- Added About screen to System menu option 7 — displays Title, Author(s), Revised date, Description, Version, Entry Point, License, and GitHub URL in script-header format; Version and Revised date are pulled live from `version_notes.db` via `get_latest_release_info()` so they auto-update with every version bump; `get_latest_release_info()` helper added to `version_manager.py`
+
+## [v2.0.3] - 2026-03-05
 
 ### Added
 

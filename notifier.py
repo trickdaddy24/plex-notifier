@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-# notifier.py — Notification App v2.0.3
+# notifier.py — Notification App v2.0.4
 
 import calendar
 import sqlite3
@@ -1272,7 +1272,7 @@ def launch_tkinter_gui():
             refresh_listbox()
 
     root = tk.Tk()
-    root.title("Notifier GUI — v2.0.3")
+    root.title("Notifier GUI — v2.0.4")
     root.geometry("720x460")
     tk.Label(root, text="Reminders", font=("Arial", 14, "bold")).pack(pady=8)
     listbox = tk.Listbox(root, width=95, height=18)
@@ -1340,6 +1340,36 @@ def do_update():
 
 # ── System menu ────────────────────────────────────────────────────────────────
 
+def show_about(vm):
+    """Display the About screen in script-header format."""
+    version, revised = vm.get_latest_release_info()
+
+    W  = Fore.WHITE + Style.BRIGHT
+    D  = Fore.WHITE + Style.DIM
+    C  = Fore.CYAN  + Style.BRIGHT
+    R  = Style.RESET_ALL
+
+    BORDER = f"{C}{'#' * 73}{R}"
+    def _row(label, value):
+        # fixed-width: label col = 16 chars, value col fills to col 71
+        inner = f"# {label:<16}{value}"
+        pad   = 71 - len(f"# {label:<16}{value}")
+        print(f"  {C}#{R}  {W}{label:<14}{R}  {D}{value}{R}{' ' * max(pad, 0)}  {C}#{R}")
+
+    print(f"\n  {BORDER}")
+    _row("Title:",       "Notifier")
+    _row("Author(s):",   "Stunna / Claude")
+    _row("Revised:",     revised)
+    _row("Description:", "Multi-platform CLI notification scheduler — Telegram,")
+    _row("",             "Discord, Pushover, Gmail — SQLite backend, recurrence,")
+    _row("",             "audit logging, JSON import/export, optional Tkinter GUI")
+    _row("Version:",     f"v{version}")
+    _row("Entry Point:", "notifier.py")
+    _row("License:",     "MIT")
+    _row("GitHub:",      "https://github.com/trickdaddy24/notifier")
+    print(f"  {BORDER}")
+
+
 def system_menu():
     """System menu — version history powered by version_manager.py"""
     try:
@@ -1364,6 +1394,7 @@ def system_menu():
         _opt("4", Fore.MAGENTA + Style.BRIGHT, "🔄", "Check for Updates")
         _opt("5", Fore.YELLOW + Style.BRIGHT,  "🕐", f"Set Timezone  {Fore.WHITE}{Style.DIM}[{tz_label}]")
         _opt("6", Fore.MAGENTA + Style.BRIGHT, "💓", f"Heartbeat  {Fore.WHITE}{Style.DIM}[{hb_label}]")
+        _opt("7", Fore.WHITE   + Style.DIM,    "ℹ️ ", "About")
         _div()
         _opt("0", Fore.RED + Style.DIM,        "⬅️ ", "Back to Main Menu")
 
@@ -1429,6 +1460,9 @@ def system_menu():
                 print(f"{Fore.GREEN}✅ Heartbeat {status}. Restart app to apply.{Style.RESET_ALL}")
             else:
                 print(f"{Fore.YELLOW}⚠️  Invalid input — unchanged.{Style.RESET_ALL}")
+            input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
+        elif choice == "7":
+            show_about(vm)
             input(f"\n  {Fore.YELLOW}Press Enter to continue...{Style.RESET_ALL}")
         elif choice == "0":
             break
